@@ -75,8 +75,8 @@ export function printLiteral(x: CaseLiteral): string {
   if (isCaseStringLiteral(x)) {
     return `"${x.data}"`
   } else if (isCaseNumericLiteral(x)) {
-    const value = typeof x.data === "number" ? x.data.toString() : `(${x.data.map(toString).join(" ")})`;
-    const dimension = x.dimension !== undefined ? `[${x.dimension.map(toString).join(" ")}] ` : "";
+    const value = typeof x.data === "number" ? x.data.toString() : `(${x.data.map(String).join(" ")})`;
+    const dimension = x.dimension !== undefined ? `[${x.dimension.map(String).join(" ")}] ` : "";
     return `${dimension}${value}`
   } else if (isCaseBooleanLiteral(x)) {
     return x.data ? "true" : "false"
