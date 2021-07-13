@@ -3,7 +3,7 @@ import {Dictionary} from "../utils";
 import {
   CaseAnnotatedExpression,
   CaseArray,
-  CaseDictionary,
+  CaseDictionary, CaseDictionaryTypeSignature,
   CaseExpression,
   CaseLiteral,
   CaseStringLiteralTypeSignature,
@@ -36,15 +36,28 @@ export function printFile(x: CaseDictionary): string {
     .map(x => x.value.type === CaseStringLiteralTypeSignature ? x.value.data : "dictionary")
     .orElse(() => "dictionary")
 
-  if (className === "dictionary") {
-    return printDictionaryInner(x)
-  } else if (className === "polyBoundaryMesh") {
-    return printArrayLikeFile(x)
-  } else {
-    console.warn(`unknown class '${className}' detected`);
-    // FIXME: must be an error
-    return printDictionaryInner(x)
+  const header = {
+    type: CaseDictionaryTypeSignature,
+    fields: Dictionary.fromEntries(Dictionary.entries(x.fields).filter(([key, value]) => key === KeyFoamFile))
+  };
+  const others = {
+    type: CaseDictionaryTypeSignature,
+    fields: Dictionary.fromEntries(Dictionary.entries(x.fields).filter(([key, value]) => key !== KeyFoamFile))
+  };
+
+  function printOther() {
+    if (className === "dictionary") {
+      return printDictionaryInner(others)
+    } else if (className === "polyBoundaryMesh") {
+      return printArrayLikeFile(others)
+    } else {
+      console.warn(`unknown class '${className}' detected`);
+      // FIXME: must be an error
+      return printDictionaryInner(others)
+    }
   }
+
+  return `${printDictionaryInner(header)}\n\n\n${printOther()}`
 }
 
 export function printAnnotatedExpression(x: CaseAnnotatedExpression, columnWidths?: number[]): string {
