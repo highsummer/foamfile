@@ -57,7 +57,15 @@ export function printFile(x: CaseDictionary): string {
     }
   }
 
-  return `${printDictionaryInner(header)}\n\n\n${printOther()}`
+  const headerComment = `/*--------------------------------*- C++ -*----------------------------------*\\
+  =========                 |
+  \\\\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\\\    /   O peration     | Website:  https://openfoam.org
+    \\\\  /    A nd           | Version:  7
+     \\\\/     M anipulation  |
+\\*---------------------------------------------------------------------------*/`;
+
+  return `${headerComment}\n\n${printDictionaryInner(header)}\n\n${printOther()}`
 }
 
 export function printAnnotatedExpression(x: CaseAnnotatedExpression, columnWidths?: number[]): string {
@@ -119,11 +127,11 @@ export function printDictionaryInner(x: CaseDictionary): string {
     .map(([key, value]) => `${key} ${printAnnotatedExpression(value)}`)
     .join("\n");
 
-  return indent(`${printedLiterals}${printedLiterals !== "" && printedOthers !== "" ? "\n" : ""}${printedOthers}`)
+  return `${printedLiterals}${printedLiterals !== "" && printedOthers !== "" ? "\n" : ""}${printedOthers}`
 }
 
 export function printDictionary(x: CaseDictionary): string {
-  return `{\n${printDictionaryInner(x)}\n}`
+  return `{\n${indent(printDictionaryInner(x))}\n}`
 }
 
 export function printArray(x: CaseArray): string {

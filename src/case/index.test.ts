@@ -2,6 +2,8 @@ import {assert, expect} from "chai";
 import {annotated, dictionary, entry, toCaseAnnotatedExpression} from "./constructor";
 import {getFromExpression, setOnExpression} from "./index";
 import {parse} from "./parser";
+import {printFile} from "./printer";
+import {CaseDictionary} from "./types";
 
 describe("case", () => {
   const text = `a {
@@ -60,5 +62,27 @@ describe("case", () => {
         entry("a", 4)
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("header test 1", () => {
+    const original = `simulationType "RAS";
+FoamFile {
+    version  2;
+    format   "ascii";
+    class    "dictionary";
+    location "constant";
+    object   "turbulenceProperties";
+}
+RAS {
+    RASModel    "SpalartAllmaras";
+    turbulence  "on";
+    printCoeffs "on";
+}`;
+
+    const parsed = parse(original);
+    parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
+
+    const rePrinted = printFile(parsed.orNull()!);
+    console.log(rePrinted);
   });
 });
