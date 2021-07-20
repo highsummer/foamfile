@@ -83,6 +83,42 @@ RAS {
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
 
     const rePrinted = printFile(parsed.orNull()!);
-    console.log(rePrinted);
+  });
+
+  it("regex key", () => {
+    const parsed = parse(regexedKey);
+    parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("nonuniform", () => {
+    const parsed = parse(nonUniform);
+    parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 });
+
+const regexedKey = `solvers
+{
+    "rho.*"
+    {
+        solver          diagonal;
+    }
+
+    "(U|e|k|epsilon)"
+    {
+        solver          PBiCGStab;
+        preconditioner  DILU;
+        tolerance       1e-5;
+        relTol          0.1;
+    }
+}
+`;
+
+const nonUniform = `
+internalField   nonuniform List<vector> 
+4
+(
+(0.349762 28.5703 1.70084e-17)
+(2.17481 30.845 -1.57762e-17)
+(4.44457 33.03 0)
+(7.03973 34.7047 -4.12643e-16)
+);`;

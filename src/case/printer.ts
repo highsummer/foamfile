@@ -120,10 +120,18 @@ export function printDictionaryInner(x: CaseDictionary): string {
     .map(column => column.map(x => x.length))
     .map(column => Math.max(...column));
   const printedLiterals = literals
+    .map(([key, value]) => /[a-zA-Z_][a-zA-Z0-9_]*/.exec(key) !== null ?
+      [`"${key}"`, value] as [string, CaseAnnotatedExpression] :
+      [key, value] as [string, CaseAnnotatedExpression]
+    )
     .map(([key, value]) => `${key.padEnd(margins[0])} ${printAnnotatedExpression(value, margins.slice(1))};`)
     .join("\n");
 
   const printedOthers = others
+    .map(([key, value]) => /[a-zA-Z_][a-zA-Z0-9_]*/.exec(key) !== null ?
+      [`"${key}"`, value] as [string, CaseAnnotatedExpression] :
+      [key, value] as [string, CaseAnnotatedExpression]
+    )
     .map(([key, value]) => `${key} ${printAnnotatedExpression(value)}`)
     .join("\n");
 
