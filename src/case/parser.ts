@@ -14,11 +14,12 @@ import {
   CaseNumericLiteralTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
-  CaseStruct,
+  CaseStruct, CaseUnparsed, CaseUnparsedTypeSignature,
   Vector
 } from "./types";
 import {Dictionary, Exception, fail} from "../utils";
 import {Either, left, right} from "fp-chainer/lib/either";
+import {toCaseLiteral} from "./constructor";
 
 export type Dimension = [number, number, number, number, number, number, number];
 
@@ -151,8 +152,50 @@ function ruleExpression(lang: LanguageFoam): Parser<CaseExpression> {
     .desc("expression")
 }
 
+function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpression> {
+  return alt2(
+    seq(
+      word("nonuniform"),
+      word("List<scalar>"),
+      lang.ruleNumber.map(x => x.toString()),
+      word("("),
+      regexp(/[0-9.\se,+-]*/),
+      word(")"),
+      option(word(";")).map(o => o ?? ""),
+    )
+      .map(tokens => ({
+        type: CaseAnnotatedExpressionTypeSignature,
+        annotations: [toCaseLiteral(tokens[0]), toCaseLiteral(tokens[1])],
+        value: ({
+          type: CaseUnparsedTypeSignature,
+          data: tokens.slice(2).join(" "),
+        })
+      })),
+    seq(
+      word("nonuniform"),
+      word("List<vector>"),
+      lang.ruleNumber.map(x => x.toString()),
+      word("("),
+      regexp(/(\s*\([0-9.\se,+-]+\s+[0-9.\se,+-]+\s+[0-9.\se,+-]+\)\s*)+/),
+      word(")"),
+      option(word(";")).map(o => o ?? ""),
+    )
+      .map(tokens => ({
+        type: CaseAnnotatedExpressionTypeSignature,
+        annotations: [toCaseLiteral(tokens[0]), toCaseLiteral(tokens[1])],
+        value: ({
+          type: CaseUnparsedTypeSignature,
+          data: tokens.slice(2).join(" "),
+        })
+      }))
+  )
+    .desc("unparsedNonuniform")
+}
+
 function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpression> {
-  return alt3(
+  return alt4(
+    lang.ruleUnparsedNonuniform
+      .map(anno => [anno.annotations, anno.value] as const),
     lang.ruleLiteral.many().skip(word(";"))
       .map(literals => [literals.slice(0, literals.length - 1), literals[literals.length - 1]] as [CaseLiteral[], CaseLiteral]),
     seq(
@@ -244,6 +287,7 @@ const rules = {
   ruleLiteral: ruleLiteral,
   ruleStruct: ruleStruct,
   ruleExpression: ruleExpression,
+  ruleUnparsedNonuniform: ruleUnparsedNonuniform,
   ruleAnnotatedExpression: ruleAnnotatedExpression,
   ruleArray: ruleArray,
   ruleDeclaration: ruleDeclaration,

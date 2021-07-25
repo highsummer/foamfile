@@ -93,6 +93,7 @@ RAS {
   it("nonuniform", () => {
     const parsed = parse(nonUniform);
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
+    console.log(JSON.stringify(parsed, undefined, "  "));
   });
 });
 

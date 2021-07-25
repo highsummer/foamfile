@@ -16,7 +16,7 @@ import {
   CaseNumericLiteralTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
-  CaseStruct,
+  CaseStruct, CaseUnparsed, CaseUnparsedTypeSignature,
 } from "./types";
 
 export function isCaseDirectory(x: CaseNode): x is CaseDirectory {
@@ -28,7 +28,7 @@ export function isCaseAnnotatedExpression(x: CaseNode): x is CaseAnnotatedExpres
 }
 
 export function isCaseExpression(x: CaseNode): x is CaseExpression {
-  return isCaseStruct(x) || isCaseLiteral(x)
+  return isCaseStruct(x) || isCaseLiteral(x) || isCaseUnparsed(x)
 }
 
 export function isCaseStruct(x: CaseNode): x is CaseStruct {
@@ -37,6 +37,10 @@ export function isCaseStruct(x: CaseNode): x is CaseStruct {
 
 export function isCaseLiteral(x: CaseNode): x is CaseLiteral {
   return isCaseStringLiteral(x) || isCaseBooleanLiteral(x) || isCaseNumericLiteral(x) || isCaseDimensionLiteral(x)
+}
+
+export function isCaseUnparsed(x: CaseNode): x is CaseUnparsed {
+  return x.type === CaseUnparsedTypeSignature
 }
 
 export function isCaseDictionary(x: CaseNode): x is CaseDictionary {

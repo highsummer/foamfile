@@ -21,7 +21,8 @@ export interface CaseAnnotatedExpression {
 
 export type CaseExpression =
   | CaseStruct
-  | CaseLiteral;
+  | CaseLiteral
+  | CaseUnparsed;
 
 export type CaseStruct =
   | CaseDictionary
@@ -32,6 +33,12 @@ export type CaseLiteral =
   | CaseBooleanLiteral
   | CaseNumericLiteral
   | CaseDimensionLiteral;
+
+export const CaseUnparsedTypeSignature = "case.unparsed" as const;
+export interface CaseUnparsed {
+  type: typeof CaseUnparsedTypeSignature;
+  data: string;
+}
 
 export const CaseDictionaryTypeSignature = "case.dictionary" as const;
 export interface CaseDictionary {

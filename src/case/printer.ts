@@ -16,7 +16,7 @@ import {
   isCaseLiteral,
   isCaseNumericLiteral,
   isCaseStringLiteral,
-  isCaseStruct
+  isCaseStruct, isCaseUnparsed
 } from "./guard";
 import {assertNever} from "../utils";
 
@@ -77,6 +77,8 @@ export function printExpression(x: CaseExpression): string {
     return printStruct(x)
   } else if (isCaseLiteral(x)) {
     return printLiteral(x)
+  } else if (isCaseUnparsed(x)) {
+    return `/* unparsed stubs */\n\n${x.data}\n\n`
   } else {
     assertNever(x);
   }

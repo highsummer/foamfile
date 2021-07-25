@@ -15,7 +15,7 @@ import {
   Vector
 } from "./types";
 import {Dictionary} from "../utils";
-import {isCaseAnnotatedExpression, isCaseStruct} from "./guard";
+import {isCaseAnnotatedExpression, isCaseStruct, isCaseUnparsed} from "./guard";
 
 export type CaseAnnotatedExpressionLike = CaseAnnotatedExpression | CaseExpressionLike;
 export type CaseExpressionLike = CaseExpression | CaseLiteralLike;
@@ -30,7 +30,7 @@ export function toCaseAnnotatedExpression(x: CaseAnnotatedExpressionLike): CaseA
 }
 
 export function toCaseExpression(x: CaseExpressionLike): CaseExpression {
-  if (typeof x === "object" && "type" in x && isCaseStruct(x)) {
+  if (typeof x === "object" && "type" in x && (isCaseStruct(x) || isCaseUnparsed(x))) {
     return x
   } else {
     return toCaseLiteral(x)
