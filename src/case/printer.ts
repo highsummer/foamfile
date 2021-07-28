@@ -2,10 +2,18 @@ import {Case, getFromExpression} from "./index";
 import {Dictionary} from "../utils";
 import {
   CaseAnnotatedExpression,
-  CaseArray, CaseDeclaration,
-  CaseDictionary, CaseDictionaryTypeSignature,
+  CaseArray,
+  CaseDeclaration,
+  CaseDictionary,
+  CaseDictionaryTypeSignature,
   CaseExpression,
-  CaseLiteral, CaseMacro, CaseMacroIdentifier, CaseMacroParentSearch, CaseMacroQualifiedName, CaseMacroRootSearch,
+  CaseLiteral,
+  CaseMacro,
+  CaseMacroIdentifier,
+  CaseMacroParentSearch,
+  CaseMacroPreprocessor,
+  CaseMacroQualifiedName,
+  CaseMacroRootSearch,
   CaseStringLiteralTypeSignature,
   CaseStruct
 } from "./types";
@@ -18,7 +26,7 @@ import {
   isCaseLiteral,
   isCaseMacro,
   isCaseMacroIdentifier,
-  isCaseMacroParentSearch,
+  isCaseMacroParentSearch, isCaseMacroPreprocessor,
   isCaseMacroQualifiedName,
   isCaseMacroRootSearch,
   isCaseNumericLiteral, isCaseRegexDeclaration,
@@ -218,6 +226,8 @@ export function printMacro(x: CaseMacro): string {
     return printMacroParentSearch(x)
   } else if (isCaseMacroRootSearch(x)) {
     return printMacroRootSearch(x)
+  } else if (isCaseMacroPreprocessor(x)) {
+    return printMacroPreprocessor(x)
   } else {
     assertNever(x);
   }
@@ -241,4 +251,8 @@ export function printMacroParentSearch(x: CaseMacroParentSearch): string {
 
 export function printMacroRootSearch(x: CaseMacroRootSearch): string {
   return `:${printMacro(x)}`
+}
+
+export function printMacroPreprocessor(x: CaseMacroPreprocessor): string {
+  return `#${x.directive} ${x.arguments.join(" ")}`
 }

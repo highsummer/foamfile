@@ -96,7 +96,7 @@ export interface CaseDimensionLiteral {
 
 export type Vector = [number, number, number];
 
-export type CaseMacro = CaseMacroIdentifier | CaseMacroQualifiedName | CaseMacroParentSearch | CaseMacroRootSearch;
+export type CaseMacro = CaseMacroIdentifier | CaseMacroQualifiedName | CaseMacroParentSearch | CaseMacroRootSearch | CaseMacroPreprocessor;
 
 export const CaseMacroIdentifierTypeSignature = "case.macro.identifier" as const;
 export interface CaseMacroIdentifier {
@@ -121,4 +121,11 @@ export const CaseMacroRootSearchTypeSignature = "case.macro.rootSearch" as const
 export interface CaseMacroRootSearch {
   type: typeof CaseMacroRootSearchTypeSignature;
   node: CaseMacro;
+}
+
+export const CaseMacroPreprocessorTypeSignature = "case.macro.preprocessor" as const;
+export interface CaseMacroPreprocessor {
+  type: typeof CaseMacroPreprocessorTypeSignature;
+  directive: string;
+  arguments: string[];
 }

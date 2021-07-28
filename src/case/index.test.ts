@@ -107,6 +107,13 @@ RAS {
     const parsed = parse(nonUniform);
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
   });
+
+  it("macros", () => {
+    const parsed = parse(nonUniform);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+      .map(_ => printFile(_));
+  });
 });
 
 const regexedKey = `solvers
@@ -135,3 +142,11 @@ internalField   nonuniform List<vector>
 (4.44457 33.03 0)
 (7.03973 34.7047 -4.12643e-16)
 );`;
+
+const preprocessor = `
+functions
+{
+    $a;
+    a $a;
+    #includeFunc mag(U)
+}`;

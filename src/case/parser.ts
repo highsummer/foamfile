@@ -5,7 +5,9 @@ import {
   CaseArray,
   CaseArrayTypeSignature,
   CaseBooleanLiteral,
-  CaseBooleanLiteralTypeSignature, CaseDeclaration, CaseDeclarationTypeSignature,
+  CaseBooleanLiteralTypeSignature,
+  CaseDeclaration,
+  CaseDeclarationTypeSignature,
   CaseDictionary,
   CaseDictionaryTypeSignature,
   CaseDimensionLiteral,
@@ -14,11 +16,18 @@ import {
   CaseLiteral,
   CaseMacro,
   CaseMacroIdentifier,
-  CaseMacroIdentifierTypeSignature, CaseMacroParentSearch, CaseMacroParentSearchTypeSignature, CaseMacroQualifiedName,
+  CaseMacroIdentifierTypeSignature,
+  CaseMacroParentSearch,
+  CaseMacroParentSearchTypeSignature,
+  CaseMacroPreprocessor, CaseMacroPreprocessorTypeSignature,
+  CaseMacroQualifiedName,
   CaseMacroQualifiedNameTypeSignature,
-  CaseMacroRootSearch, CaseMacroRootSearchTypeSignature,
+  CaseMacroRootSearch,
+  CaseMacroRootSearchTypeSignature,
   CaseNumericLiteral,
-  CaseNumericLiteralTypeSignature, CaseRegexDeclaration, CaseRegexDeclarationTypeSignature,
+  CaseNumericLiteralTypeSignature,
+  CaseRegexDeclaration,
+  CaseRegexDeclarationTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
   CaseStruct,
@@ -93,17 +102,33 @@ namespace Macro {
       .desc("identifier")
   }
 
-  function ruleMacroOuter(lang: LanguageMacro): Parser<CaseMacro> {
+  function rulePreprocessor(lang: LanguageFoam): Parser<CaseMacroPreprocessor> {
     return seq(
-      string("$"),
-      alt4(
-        lang.ruleRootSearch,
-        lang.ruleParentSearch,
-        lang.ruleQualifiedName,
-        lang.ruleIdentifier,
-      ),
+      token(regexp(/(#include(IfPresent|Etc|Func)?)|(#remove)/)),
+      alt(lang.ruleDoubleQuote, lang.ruleString).many()
     )
-      .map(([_, macro]) => macro)
+      .map(([directive, args]) => ({
+        type: CaseMacroPreprocessorTypeSignature,
+        directive: directive.slice(1),
+        arguments: args,
+      }))
+      .desc("preprocessor")
+  }
+
+  function ruleMacroOuter(lang: LanguageMacro): Parser<CaseMacro> {
+    return alt2(
+      seq(
+        string("$"),
+        alt4(
+          lang.ruleRootSearch,
+          lang.ruleParentSearch,
+          lang.ruleQualifiedName,
+          lang.ruleIdentifier,
+        ),
+      )
+        .map(([_, macro]) => macro),
+      lang.rulePreprocessor
+    )
       .desc("macro")
   }
 
@@ -114,6 +139,7 @@ namespace Macro {
     ruleParentSearch,
     ruleQualifiedName,
     ruleIdentifier,
+    rulePreprocessor,
   };
 
   type LanguageMacro = TypedLanguage<Spec<typeof rules>>;
