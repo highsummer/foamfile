@@ -94,12 +94,16 @@ namespace Macro {
   }
 
   function ruleMacroOuter(lang: LanguageMacro): Parser<CaseMacro> {
-    return alt4(
-      lang.ruleRootSearch,
-      lang.ruleParentSearch,
-      lang.ruleQualifiedName,
-      lang.ruleIdentifier,
+    return seq(
+      string("$"),
+      alt4(
+        lang.ruleRootSearch,
+        lang.ruleParentSearch,
+        lang.ruleQualifiedName,
+        lang.ruleIdentifier,
+      ),
     )
+      .map(([_, macro]) => macro)
       .desc("macro")
   }
 
@@ -113,6 +117,48 @@ namespace Macro {
   };
 
   type LanguageMacro = TypedLanguage<Spec<typeof rules>>;
+}
+
+namespace Parenthesis {
+  function ruleCharacter(lang: LanguageParenthesis): Parser<string> {
+    return regexp(/[a-zA-Z0-9-_]+/)
+  }
+
+  const ruleParentheses = enclose(string("("), string(")"), "parentheses");
+  const ruleBrackets = enclose(string("["), string("]"), "brackets");
+  const ruleBraces = enclose(string("{"), string("}"), "braces");
+  const ruleChevrons = enclose(string("<"), string(">"), "chevrons");
+
+  function enclose(open: Parser<string>, close: Parser<string>, desc: string): (lang: LanguageParenthesis) => Parser<string> {
+    return (lang: LanguageParenthesis) => seq(
+      open,
+      option(lang.ruleMatchedParentheses),
+      close,
+    )
+      .map(([open, text, close]) => `${open}${text ?? ""}${close}`)
+      .desc(desc)
+  }
+
+  function ruleMatchedParentheses(lang: LanguageParenthesis): Parser<string> {
+    return alt(
+      lang.ruleParentheses,
+      lang.ruleBrackets,
+      lang.ruleBraces,
+      lang.ruleChevrons,
+      lang.ruleCharacter,
+    )
+  }
+
+  export const rules = {
+    ruleMatchedParentheses,
+    ruleCharacter,
+    ruleParentheses,
+    ruleBrackets,
+    ruleBraces,
+    ruleChevrons,
+  };
+
+  type LanguageParenthesis = TypedLanguage<Spec<typeof rules>>;
 }
 
 export type Dimension = [number, number, number, number, number, number, number];
@@ -169,12 +215,13 @@ function ruleBoolean(lang: LanguageFoam): Parser<boolean> {
 }
 
 function ruleString(lang: LanguageFoam): Parser<string> {
-  return alt2(
-    token(regexp(/"((?:\\.|.)*?)"/, 1))
-      .desc("quotedString"),
-    token(regexp(/\$?[()<>a-zA-Z_-][^";})\]\s]*/))
-      .desc("plainString")
-  ).desc("string")
+  return token(regexp(/[^\s{};]+/))
+    .desc("string")
+}
+
+function ruleDoubleQuote(lang: LanguageFoam): Parser<string> {
+  return token(regexp(/"([^\\"]|\\\\|\\")*"/).map(_ => _.slice(1, -1)))
+    .desc("doubleQuote")
 }
 
 function ruleDimension(lang: LanguageFoam): Parser<Dimension> {
@@ -222,9 +269,9 @@ function ruleDimensionLiteral(lang: LanguageFoam): Parser<CaseDimensionLiteral> 
 function ruleLiteral(lang: LanguageFoam): Parser<CaseLiteral> {
   return alt4(
     lang.ruleBooleanLiteral,
-    lang.ruleStringLiteral,
     lang.ruleNumericLiteral,
     lang.ruleDimensionLiteral,
+    lang.ruleStringLiteral,
   )
     .desc("literal")
 }
@@ -305,10 +352,7 @@ function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpres
         lang.ruleMacro,
       )
         .many(),
-      alt2(
-        lang.ruleDictionary,
-        lang.ruleMacro,
-      ),
+      lang.ruleDictionary,
     )
       .desc("annotatedDictionary"),
     seq(
@@ -316,10 +360,7 @@ function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpres
         lang.ruleLiteral,
         lang.ruleMacro,
       ).many(),
-      alt2(
-        lang.ruleDictionary,
-        lang.ruleMacro,
-      ),
+      lang.ruleArray,
       option(word(";")),
     )
       .map(([annotations, value, _]) => [annotations, value] as const)
@@ -355,6 +396,7 @@ function ruleDeclaration(lang: LanguageFoam): Parser<CaseDeclaration> {
       key: key,
       value: value,
     }))
+    .desc("declaration")
 }
 
 function ruleDictionary(lang: LanguageFoam): Parser<CaseDictionary> {
@@ -405,6 +447,7 @@ const rules = {
   ruleNumber,
   ruleBoolean,
   ruleString,
+  ruleDoubleQuote,
   ruleDimension,
   ruleVector,
   ruleBooleanLiteral,
@@ -424,6 +467,7 @@ const rules = {
   ruleFoam,
 
   ...Macro.rules,
+  ...Parenthesis.rules,
 };
 
 type TypeOf<T> = T extends (...args: any[]) => Parser<infer R> ? R : never;

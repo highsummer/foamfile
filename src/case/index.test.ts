@@ -21,6 +21,12 @@ describe("case", () => {
   );
 
   it("parser test 1", () => {
+    parse(`a 1;`)
+      .map(d => expect(d).to.be.deep.equal(dictionary(entry("a", 1))))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("parser test 2", () => {
     parsed
       .map(d => expect(d).to.be.deep.equal(expectation))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
