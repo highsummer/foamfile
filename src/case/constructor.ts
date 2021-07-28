@@ -3,7 +3,7 @@ import {
   CaseAnnotatedExpressionTypeSignature,
   CaseArray,
   CaseArrayTypeSignature,
-  CaseBooleanLiteralTypeSignature,
+  CaseBooleanLiteralTypeSignature, CaseDeclaration, CaseDeclarationTypeSignature,
   CaseDictionary,
   CaseDictionaryTypeSignature,
   CaseDirectory,
@@ -72,14 +72,18 @@ export function directory(...entries: [string, CaseDictionary][]): CaseDirectory
   }
 }
 
-export function entry<K extends string, V>(k: K, v: V): [K, V] {
-  return [k, v]
+export function entry(k: string, v: CaseAnnotatedExpressionLike): CaseDeclaration {
+  return {
+    type: CaseDeclarationTypeSignature,
+    key: k,
+    value: toCaseAnnotatedExpression(v),
+  }
 }
 
-export function dictionary(...entries: [string, CaseAnnotatedExpressionLike][]): CaseDictionary {
+export function dictionary(...entries: CaseDeclaration[]): CaseDictionary {
   return {
     type: CaseDictionaryTypeSignature,
-    fields: Dictionary.fromEntries(entries.map(([key, anno]) => [key, toCaseAnnotatedExpression(anno)])),
+    fields: entries,
   }
 }
 

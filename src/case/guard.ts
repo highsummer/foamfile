@@ -5,18 +5,33 @@ import {
   CaseArrayTypeSignature,
   CaseBooleanLiteral,
   CaseBooleanLiteralTypeSignature,
+  CaseDeclaration,
+  CaseDeclarationTypeSignature,
   CaseDictionary,
-  CaseDictionaryTypeSignature, CaseDimensionLiteral, CaseDimensionLiteralTypeSignature,
+  CaseDictionaryTypeSignature,
+  CaseDimensionLiteral,
+  CaseDimensionLiteralTypeSignature,
   CaseDirectory,
   CaseDirectoryTypeSignature,
   CaseExpression,
   CaseLiteral,
+  CaseMacro,
+  CaseMacroIdentifier,
+  CaseMacroIdentifierTypeSignature,
+  CaseMacroParentSearch,
+  CaseMacroParentSearchTypeSignature,
+  CaseMacroQualifiedName,
+  CaseMacroQualifiedNameTypeSignature,
+  CaseMacroRootSearch,
+  CaseMacroRootSearchTypeSignature,
   CaseNode,
   CaseNumericLiteral,
   CaseNumericLiteralTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
-  CaseStruct, CaseUnparsed, CaseUnparsedTypeSignature,
+  CaseStruct,
+  CaseUnparsed,
+  CaseUnparsedTypeSignature,
 } from "./types";
 
 export function isCaseDirectory(x: CaseNode): x is CaseDirectory {
@@ -47,6 +62,10 @@ export function isCaseDictionary(x: CaseNode): x is CaseDictionary {
   return x.type === CaseDictionaryTypeSignature
 }
 
+export function isCaseDeclaration(x: CaseNode): x is CaseDeclaration {
+  return x.type === CaseDeclarationTypeSignature
+}
+
 export function isCaseArray(x: CaseNode): x is CaseArray {
   return x.type === CaseArrayTypeSignature
 }
@@ -65,4 +84,24 @@ export function isCaseNumericLiteral(x: CaseNode): x is CaseNumericLiteral {
 
 export function isCaseDimensionLiteral(x: CaseNode): x is CaseDimensionLiteral {
   return x.type === CaseDimensionLiteralTypeSignature
+}
+
+export function isCaseMacro(x: CaseNode): x is CaseMacro {
+  return isCaseMacroIdentifier(x) || isCaseMacroParentSearch(x) || isCaseMacroRootSearch(x) || isCaseMacroQualifiedName(x)
+}
+
+export function isCaseMacroIdentifier(x: CaseNode): x is CaseMacroIdentifier {
+  return x.type == CaseMacroIdentifierTypeSignature
+}
+
+export function isCaseMacroParentSearch(x: CaseNode): x is CaseMacroParentSearch {
+  return x.type == CaseMacroParentSearchTypeSignature
+}
+
+export function isCaseMacroRootSearch(x: CaseNode): x is CaseMacroRootSearch {
+  return x.type == CaseMacroRootSearchTypeSignature
+}
+
+export function isCaseMacroQualifiedName(x: CaseNode): x is CaseMacroQualifiedName {
+  return x.type == CaseMacroQualifiedNameTypeSignature
 }

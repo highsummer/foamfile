@@ -2,21 +2,29 @@ import {Case, getFromExpression} from "./index";
 import {Dictionary} from "../utils";
 import {
   CaseAnnotatedExpression,
-  CaseArray,
+  CaseArray, CaseDeclaration,
   CaseDictionary, CaseDictionaryTypeSignature,
   CaseExpression,
-  CaseLiteral,
+  CaseLiteral, CaseMacro, CaseMacroIdentifier, CaseMacroParentSearch, CaseMacroQualifiedName, CaseMacroRootSearch,
   CaseStringLiteralTypeSignature,
   CaseStruct
 } from "./types";
 import {
   isCaseArray,
   isCaseBooleanLiteral,
-  isCaseDictionary, isCaseDimensionLiteral,
+  isCaseDeclaration,
+  isCaseDictionary,
+  isCaseDimensionLiteral,
   isCaseLiteral,
+  isCaseMacro,
+  isCaseMacroIdentifier,
+  isCaseMacroParentSearch,
+  isCaseMacroQualifiedName,
+  isCaseMacroRootSearch,
   isCaseNumericLiteral,
   isCaseStringLiteral,
-  isCaseStruct, isCaseUnparsed
+  isCaseStruct,
+  isCaseUnparsed
 } from "./guard";
 import {assertNever} from "../utils";
 
@@ -38,11 +46,11 @@ export function printFile(x: CaseDictionary): string {
 
   const header = {
     type: CaseDictionaryTypeSignature,
-    fields: Dictionary.fromEntries(Dictionary.entries(x.fields).filter(([key, value]) => key === KeyFoamFile))
+    fields: x.fields.filter(entry => !isCaseDeclaration(entry) || entry.key === KeyFoamFile)
   };
   const others = {
     type: CaseDictionaryTypeSignature,
-    fields: Dictionary.fromEntries(Dictionary.entries(x.fields).filter(([key, value]) => key !== KeyFoamFile))
+    fields: x.fields.filter(entry => !isCaseDeclaration(entry) || entry.key === KeyFoamFile)
   };
 
   function printOther() {
@@ -69,7 +77,7 @@ export function printFile(x: CaseDictionary): string {
 }
 
 export function printAnnotatedExpression(x: CaseAnnotatedExpression, columnWidths?: number[]): string {
-  return `${[...x.annotations.map((l, i) => printLiteral(l).padEnd(columnWidths?.[i] ?? 0)), printExpression(x.value)].join(" ")}`
+  return `${[...x.annotations.map((l, i) => (isCaseMacro(l) ? printMacro(l) : printLiteral(l)).padEnd(columnWidths?.[i] ?? 0)), isCaseMacro(x.value) ? printMacro(x.value) : printExpression(x.value)].join(" ")}`
 }
 
 export function printExpression(x: CaseExpression): string {
@@ -110,11 +118,11 @@ export function printLiteral(x: CaseLiteral): string {
   }
 }
 
-export function printDictionaryInner(x: CaseDictionary): string {
-  const literals = Dictionary.entries(x.fields).filter(([_, value]) => isCaseLiteral(value.value));
-  const others = Dictionary.entries(x.fields).filter(([_, value]) => !isCaseLiteral(value.value));
+function printDictionaryInnerClean(fields: [string, CaseAnnotatedExpression][]): string {
+  const literals = fields.filter(([_, value]) => isCaseLiteral(value.value));
+  const others = fields.filter(([_, value]) => !isCaseLiteral(value.value));
 
-  const textLiterals = literals.map(([key, value]) => ([key, ...value.annotations.map(printLiteral), printExpression(value.value)]));
+  const textLiterals = literals.map(([key, value]) => ([key, ...value.annotations.map(printLiteral), printExpression(value.value as CaseExpression)]));
   const maxColumn = Math.max(...textLiterals.map(row => row.length), 0);
   const margins = new Array(maxColumn)
     .fill(0)
@@ -140,17 +148,48 @@ export function printDictionaryInner(x: CaseDictionary): string {
   return `${printedLiterals}${printedLiterals !== "" && printedOthers !== "" ? "\n" : ""}${printedOthers}`
 }
 
+export function printDictionaryInner(x: CaseDictionary): string {
+  if (x.fields.every(entry => !isCaseMacro(entry) && !isCaseMacro(entry.value))) {
+    return printDictionaryInnerClean(x.fields
+      .map(entry => entry as CaseDeclaration)
+      .map(({ key, value }) => [key, value] as [string, CaseAnnotatedExpression])
+    )
+  } else {
+    return x.fields
+      .map(entry => {
+        if (isCaseMacro(entry)) {
+          return printMacro(entry)
+        } else {
+          if (isCaseMacro(entry.value)) {
+            return `${entry.key} ${printMacro(entry.value)};`
+          } else if (isCaseDictionary(entry.value.value)) {
+            return `${entry.key} ${printAnnotatedExpression(entry.value)}`
+          } else {
+            return `${entry.key} ${printAnnotatedExpression(entry.value)};`
+          }
+        }
+      })
+      .join("\n")
+  }
+}
+
 export function printDictionary(x: CaseDictionary): string {
   return `{\n${indent(printDictionaryInner(x))}\n}`
 }
 
 export function printArray(x: CaseArray): string {
-  return `(${x.fields.map(value => `${[...value.annotations.map(printLiteral), printExpression(value.value)].join(" ")}`).join(" ")})`
+  return `(${x.fields.map(value => {
+    if (isCaseMacro(value)) {
+      return printMacro(value)
+    } else {
+      return `${[...value.annotations.map(x => isCaseMacro(x) ? printMacro(x) : printLiteral(x)), isCaseMacro(value.value) ? printMacro(value.value) : printExpression(value.value)].join(" ")}`
+    }
+  }).join(" ")})`
 }
 
 export function printArrayLikeFile(x: CaseDictionary): string {
   const header = getFromExpression(x, [KeyFoamFile]);
-  const others = Dictionary.entries(x.fields).filter(([key, value]) => key !== KeyFoamFile);
+  const others = x.fields.filter(entry => isCaseMacro(entry) || entry.key !== KeyFoamFile);
 
   const printedHeader = header
     .map(printAnnotatedExpression)
@@ -158,10 +197,52 @@ export function printArrayLikeFile(x: CaseDictionary): string {
     .orElse(() => "");
 
   const printedInnerBody = others
-    .map(([key, value]) => `${key} ${printAnnotatedExpression(value)}`)
+    .map(entry => {
+      if (isCaseMacro(entry)) {
+        return printMacro(entry)
+      } else if (isCaseMacro(entry.value)) {
+        return `${entry.key} ${printMacro(entry.value)}`
+      } else {
+        return `${entry.key} ${printAnnotatedExpression(entry.value)}`
+      }
+    })
     .join("\n");
 
   const printedBody = `${others.length} (\n${indent(printedInnerBody)}\n)`;
 
   return `${printedHeader}${printedHeader !== "" ? "\n\n" : ""}${printedBody}`
+}
+
+export function printMacro(x: CaseMacro): string {
+  if (isCaseMacroIdentifier(x)) {
+    return printMacroIdentifier(x)
+  } else if (isCaseMacroQualifiedName(x)) {
+    return printMacroQualifiedName(x)
+  } else if (isCaseMacroParentSearch(x)) {
+    return printMacroParentSearch(x)
+  } else if (isCaseMacroRootSearch(x)) {
+    return printMacroRootSearch(x)
+  } else {
+    assertNever(x);
+  }
+}
+
+export function printMacroIdentifier(x: CaseMacroIdentifier): string {
+  return x.name
+}
+
+export function printMacroQualifiedName(x: CaseMacroQualifiedName): string {
+  return `${x.namespace}.${printMacro(x.node)}`
+}
+
+export function printMacroParentSearch(x: CaseMacroParentSearch): string {
+  if (isCaseMacroParentSearch(x.node)) {
+    return `.${printMacroParentSearch(x.node)}`
+  } else {
+    return `..${printMacro(x.node)}`
+  }
+}
+
+export function printMacroRootSearch(x: CaseMacroRootSearch): string {
+  return `:${printMacro(x)}`
 }

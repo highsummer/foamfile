@@ -4,7 +4,9 @@ import {Dimension} from "./parser";
 export type CaseNode =
   | CaseDirectory
   | CaseAnnotatedExpression
-  | CaseExpression;
+  | CaseExpression
+  | CaseDeclaration
+  | CaseMacro;
 
 export const CaseDirectoryTypeSignature = "case.directory" as const;
 export interface CaseDirectory {
@@ -15,8 +17,8 @@ export interface CaseDirectory {
 export const CaseAnnotatedExpressionTypeSignature = "case.annotatedExpression" as const;
 export interface CaseAnnotatedExpression {
   type: typeof CaseAnnotatedExpressionTypeSignature;
-  value: CaseExpression;
-  annotations: CaseLiteral[];
+  value: CaseExpression | CaseMacro;
+  annotations: (CaseLiteral | CaseMacro)[];
 }
 
 export type CaseExpression =
@@ -43,28 +45,35 @@ export interface CaseUnparsed {
 export const CaseDictionaryTypeSignature = "case.dictionary" as const;
 export interface CaseDictionary {
   type: typeof CaseDictionaryTypeSignature;
-  fields: Dictionary<string, CaseAnnotatedExpression>;
+  fields: (CaseDeclaration | CaseMacro)[];
+}
+
+export const CaseDeclarationTypeSignature = "case.declaration" as const;
+export interface CaseDeclaration {
+  type: typeof CaseDeclarationTypeSignature;
+  key: string;
+  value: CaseAnnotatedExpression | CaseMacro;
 }
 
 export const CaseArrayTypeSignature = "case.array" as const;
 export interface CaseArray {
   type: typeof CaseArrayTypeSignature;
-  fields: CaseAnnotatedExpression[];
+  fields: (CaseAnnotatedExpression | CaseMacro)[];
 }
 
-export const CaseStringLiteralTypeSignature = "case.stringLiteral" as const;
+export const CaseStringLiteralTypeSignature = "case.literal.string" as const;
 export interface CaseStringLiteral {
   type: typeof CaseStringLiteralTypeSignature;
   data: string;
 }
 
-export const CaseBooleanLiteralTypeSignature = "case.booleanLiteral" as const;
+export const CaseBooleanLiteralTypeSignature = "case.literal.boolean" as const;
 export interface CaseBooleanLiteral {
   type: typeof CaseBooleanLiteralTypeSignature;
   data: boolean;
 }
 
-export const CaseNumericLiteralTypeSignature = "case.numericLiteral" as const;
+export const CaseNumericLiteralTypeSignature = "case.literal.numeric" as const;
 export interface CaseNumericLiteral {
   type: typeof CaseNumericLiteralTypeSignature;
   data: number | Vector;
@@ -78,3 +87,30 @@ export interface CaseDimensionLiteral {
 }
 
 export type Vector = [number, number, number];
+
+export type CaseMacro = CaseMacroIdentifier | CaseMacroQualifiedName | CaseMacroParentSearch | CaseMacroRootSearch;
+
+export const CaseMacroIdentifierTypeSignature = "case.macro.identifier" as const;
+export interface CaseMacroIdentifier {
+  type: typeof CaseMacroIdentifierTypeSignature;
+  name: string;
+}
+
+export const CaseMacroQualifiedNameTypeSignature = "case.macro.qualifiedName" as const;
+export interface CaseMacroQualifiedName {
+  type: typeof CaseMacroQualifiedNameTypeSignature;
+  namespace: string;
+  node: CaseMacro;
+}
+
+export const CaseMacroParentSearchTypeSignature = "case.macro.parentSearch" as const;
+export interface CaseMacroParentSearch {
+  type: typeof CaseMacroParentSearchTypeSignature;
+  node: CaseMacro;
+}
+
+export const CaseMacroRootSearchTypeSignature = "case.macro.rootSearch" as const;
+export interface CaseMacroRootSearch {
+  type: typeof CaseMacroRootSearchTypeSignature;
+  node: CaseMacro;
+}

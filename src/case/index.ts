@@ -1,15 +1,23 @@
 import {
   CaseAnnotatedExpression,
   CaseArray,
-  CaseArrayTypeSignature,
+  CaseArrayTypeSignature, CaseDeclarationTypeSignature,
   CaseDictionary,
   CaseDictionaryTypeSignature,
   CaseDirectory,
-  CaseExpression,
+  CaseExpression, CaseMacro, CaseMacroParentSearchTypeSignature, CaseNode,
 } from "./types";
-import {Dictionary, Exception, fail} from "../utils";
-import {isCaseArray, isCaseDictionary} from "./guard";
+import {assertNever, Dictionary, Exception, fail} from "../utils";
+import {
+  isCaseArray, isCaseDeclaration,
+  isCaseDictionary, isCaseMacro,
+  isCaseMacroIdentifier,
+  isCaseMacroParentSearch,
+  isCaseMacroQualifiedName, isCaseMacroRootSearch,
+} from "./guard";
 import {Either, left, right} from "fp-chainer/lib/either";
+import {fromNullable} from "fp-chainer/lib/option";
+import {toCaseAnnotatedExpression} from "./constructor";
 
 export {CaseDirectory as Case} from "./types";
 
@@ -37,11 +45,13 @@ function isThis(key: Key): boolean {
 
 export const CaseGetExceptionNoSuchFile = "core.case.get.NoSuchFile" as const;
 export const CaseGetExceptionNoSuchKey = "core.case.get.NoSuchKey" as const;
+export const CaseGetExceptionMacro = "core.case.get.Macro" as const;
 export const CaseGetExceptionUnreachable = "core.case.get.Unreachable" as const;
 
 export type CaseGetExceptions =
   | Exception<typeof CaseGetExceptionNoSuchFile>
   | Exception<typeof CaseGetExceptionNoSuchKey>
+  | Exception<typeof CaseGetExceptionMacro>
   | Exception<typeof CaseGetExceptionUnreachable>;
 
 export function getFromDirectory(dir: CaseDirectory, path: string, key: Key): Either<CaseGetExceptions, CaseAnnotatedExpression> {
@@ -53,6 +63,8 @@ export function getFromDirectory(dir: CaseDirectory, path: string, key: Key): Ei
 export function getFromAnnotatedExpression(anno: CaseAnnotatedExpression, key: Key): Either<CaseGetExceptions, CaseAnnotatedExpression> {
   if (isThis(key)) {
     return right(anno)
+  } else if (isCaseMacro(anno.value)) {
+    return left(fail(CaseGetExceptionMacro, "unexpanded macro found"))
   } else {
     return getFromExpression(anno.value, key)
   }
@@ -62,16 +74,22 @@ export function getFromExpression(expr: CaseExpression, key: Key): Either<CaseGe
   if (isThis(key)) {
     return left(fail(CaseGetExceptionUnreachable, { expr: expr, key: key }))
   } else {
-    if (isCaseDictionary(expr)) {
-      return Dictionary.get(expr.fields, head(key))
+    if (isCaseMacro(expr)) {
+      return left(fail(CaseGetExceptionMacro, "unexpanded macro found"))
+    } else if (isCaseDictionary(expr)) {
+      const name = head(key);
+      return fromNullable(expr.fields.find(entry => !isCaseMacro(entry) && entry.key === name))
         .mapLeft(() => fail(CaseGetExceptionNoSuchKey, `no such key '${representKey(key)}'`))
-        .chain(data => getFromAnnotatedExpression(data, tail(key)))
+        .chain(data => isCaseMacro(data) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : right(data))
+        .chain(({ value }) => isCaseMacro(value) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : getFromAnnotatedExpression(value, tail(key)))
     } else if (isCaseArray(expr)) {
       const name = head(key);
-      const e: Either<CaseGetExceptions, CaseAnnotatedExpression> = typeof name === "number" ?
+      const e: Either<CaseGetExceptions, CaseAnnotatedExpression | CaseMacro> = typeof name === "number" ?
         (expr.fields[name] !== undefined ? right(expr.fields[name]) : left(fail(CaseGetExceptionNoSuchKey, `index out of range`))) :
         left(fail(CaseGetExceptionNoSuchKey, `cannot index array with string`));
-      return e.chain(data => getFromAnnotatedExpression(data, tail(key)))
+      return e
+        .chain(data => isCaseMacro(data) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : right(data))
+        .chain(data => getFromAnnotatedExpression(data, tail(key)))
     } else {
       return left(fail(CaseGetExceptionNoSuchKey, `expression reached terminal but key is '${representKey(key)}'`))
     }
@@ -80,7 +98,7 @@ export function getFromExpression(expr: CaseExpression, key: Key): Either<CaseGe
 
 export const EmptyCaseDictionary: CaseDictionary = {
   type: CaseDictionaryTypeSignature,
-  fields: Dictionary.empty,
+  fields: [],
 }
 
 export const EmptyCaseArray: CaseArray = {
@@ -88,9 +106,11 @@ export const EmptyCaseArray: CaseArray = {
   fields: [],
 }
 
+export const CaseSetExceptionMacro = "core.case.set.Macro" as const;
 export const CaseSetExceptionUnreachable = "core.case.set.Unreachable" as const;
 
 export type CaseSetExceptions =
+  | Exception<typeof CaseSetExceptionMacro>
   | Exception<typeof CaseSetExceptionUnreachable>;
 
 export function setOnDirectory(dir: CaseDirectory, path: string, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseDirectory> {
@@ -107,6 +127,8 @@ export function setOnDirectory(dir: CaseDirectory, path: string, key: Key, value
 export function setOnAnnotatedExpression(anno: CaseAnnotatedExpression, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseAnnotatedExpression> {
   if (isThis(key)) {
     return right(value)
+  } else if (isCaseMacro(anno.value)) {
+    return left(fail(CaseSetExceptionMacro, "unexpanded macro found"))
   } else {
     return setOnExpression(anno.value, key, value)
       .map(value => ({
@@ -130,16 +152,42 @@ export function setOnExpression(expr: CaseExpression, key: Key, value: CaseAnnot
   }
 }
 
+function upsert<A>(as: A[], finder: (a: A) => boolean, factory: (a: A | undefined) => A): A[] {
+  const index = as.findIndex(finder);
+  if (index === -1) {
+    return [...as, factory(undefined)]
+  } else {
+    return [...as.slice(0, index), factory(as[index]), ...as.slice(index + 1)]
+  }
+}
+
 export function setOnDictionary(expr: CaseDictionary, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseExpression> {
   const name = head(key);
   if (typeof name === "string") {
-    return Dictionary.get(expr.fields, name)
-      .chainLeft(() => right(value))
-      .chain(old => setOnAnnotatedExpression(old, tail(key), value))
-      .map(updated => ({
-        ...expr,
-        fields: Dictionary.set(expr.fields, name, updated),
-      }))
+    const original = expr.fields.find(entry => !isCaseMacro(entry) && entry.key === name);
+    if (original !== undefined) {
+      return right(original)
+        .chain(old => isCaseMacro(old) ? left(fail(CaseSetExceptionMacro, "unexpanded macro found")) : right(old))
+        .chain(old => isCaseMacro(old.value) ? left(fail(CaseSetExceptionMacro, "unexpanded macro found")) : setOnAnnotatedExpression(old.value, tail(key), value))
+        .map(newValue => ({
+          ...expr,
+          fields: upsert(
+            expr.fields,
+            entry => !isCaseMacro(entry) && entry.key === name,
+            () => ({ type: CaseDeclarationTypeSignature, key: name, value: newValue }),
+          ),
+        }))
+    } else {
+      return setOnNew(tail(key), value)
+        .map(_ => ({ type: CaseDeclarationTypeSignature, key: name, value: toCaseAnnotatedExpression(_) }))
+        .map(newEntry => ({
+          ...expr,
+          fields: [
+            ...expr.fields,
+            newEntry,
+          ]
+        }))
+    }
   } else {
     return setOnNew(key, value)
   }
@@ -175,6 +223,7 @@ export function setOnArray(expr: CaseArray, key: Key, value: CaseAnnotatedExpres
   if (typeof name === "number") {
     return arrayGet(expr.fields, name)
       .chainLeft(() => right(value))
+      .chain(old => isCaseMacro(old) ? left(fail(CaseSetExceptionMacro, "unexpanded macro found")) : right(old))
       .chain(old => setOnAnnotatedExpression(old, tail(key), value))
       .chain(updated => arraySet(expr.fields, name, updated)
         .map(fields => ({
