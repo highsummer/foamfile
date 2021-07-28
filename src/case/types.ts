@@ -6,6 +6,7 @@ export type CaseNode =
   | CaseAnnotatedExpression
   | CaseExpression
   | CaseDeclaration
+  | CaseRegexDeclaration
   | CaseMacro;
 
 export const CaseDirectoryTypeSignature = "case.directory" as const;
@@ -45,13 +46,20 @@ export interface CaseUnparsed {
 export const CaseDictionaryTypeSignature = "case.dictionary" as const;
 export interface CaseDictionary {
   type: typeof CaseDictionaryTypeSignature;
-  fields: (CaseDeclaration | CaseMacro)[];
+  fields: (CaseDeclaration | CaseRegexDeclaration | CaseMacro)[];
 }
 
 export const CaseDeclarationTypeSignature = "case.declaration" as const;
 export interface CaseDeclaration {
   type: typeof CaseDeclarationTypeSignature;
   key: string;
+  value: CaseAnnotatedExpression | CaseMacro;
+}
+
+export const CaseRegexDeclarationTypeSignature = "case.regexDeclaration" as const;
+export interface CaseRegexDeclaration {
+  type: typeof CaseRegexDeclarationTypeSignature;
+  pattern: string;
   value: CaseAnnotatedExpression | CaseMacro;
 }
 

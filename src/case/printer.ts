@@ -21,7 +21,7 @@ import {
   isCaseMacroParentSearch,
   isCaseMacroQualifiedName,
   isCaseMacroRootSearch,
-  isCaseNumericLiteral,
+  isCaseNumericLiteral, isCaseRegexDeclaration,
   isCaseStringLiteral,
   isCaseStruct,
   isCaseUnparsed
@@ -152,12 +152,13 @@ export function printDictionaryInner(x: CaseDictionary): string {
         if (isCaseMacro(entry)) {
           return printMacro(entry)
         } else {
+          const keyText = isCaseRegexDeclaration(entry) ? `"${entry.pattern}"` : entry.key;
           if (isCaseMacro(entry.value)) {
-            return `${entry.key} ${printMacro(entry.value)};`
+            return `${keyText} ${printMacro(entry.value)};`
           } else if (isCaseDictionary(entry.value.value)) {
-            return `${entry.key} ${printAnnotatedExpression(entry.value)}`
+            return `${keyText} ${printAnnotatedExpression(entry.value)}`
           } else {
-            return `${entry.key} ${printAnnotatedExpression(entry.value)};`
+            return `${keyText} ${printAnnotatedExpression(entry.value)};`
           }
         }
       })
@@ -181,7 +182,7 @@ export function printArray(x: CaseArray): string {
 
 export function printArrayLikeFile(x: CaseDictionary): string {
   const header = getFromExpression(x, [KeyFoamFile]);
-  const others = x.fields.filter(entry => isCaseMacro(entry) || entry.key !== KeyFoamFile);
+  const others = x.fields.filter(entry => isCaseDeclaration(entry) && entry.key !== KeyFoamFile);
 
   const printedHeader = header
     .map(printAnnotatedExpression)
@@ -192,10 +193,13 @@ export function printArrayLikeFile(x: CaseDictionary): string {
     .map(entry => {
       if (isCaseMacro(entry)) {
         return printMacro(entry)
-      } else if (isCaseMacro(entry.value)) {
-        return `${entry.key} ${printMacro(entry.value)}`
       } else {
-        return `${entry.key} ${printAnnotatedExpression(entry.value)}`
+        const keyText = isCaseRegexDeclaration(entry) ? `"${entry.pattern}"` : entry.key;
+        if (isCaseMacro(entry.value)) {
+          return `${keyText} ${printMacro(entry.value)}`
+        } else {
+          return `${keyText} ${printAnnotatedExpression(entry.value)}`
+        }
       }
     })
     .join("\n");

@@ -13,7 +13,7 @@ import {
   isCaseDictionary, isCaseMacro,
   isCaseMacroIdentifier,
   isCaseMacroParentSearch,
-  isCaseMacroQualifiedName, isCaseMacroRootSearch,
+  isCaseMacroQualifiedName, isCaseMacroRootSearch, isCaseRegexDeclaration,
 } from "./guard";
 import {Either, left, right} from "fp-chainer/lib/either";
 import {fromNullable} from "fp-chainer/lib/option";
@@ -70,6 +70,18 @@ export function getFromAnnotatedExpression(anno: CaseAnnotatedExpression, key: K
   }
 }
 
+function matchDeclaration(entry: CaseDictionary["fields"][number], key: string) {
+  if (isCaseMacro(entry)) {
+    return false
+  } else if (isCaseRegexDeclaration(entry)) {
+    return new RegExp(entry.pattern).exec(key) !== null
+  } else if (isCaseDeclaration(entry)) {
+    return entry.key === key
+  } else {
+    assertNever(entry);
+  }
+}
+
 export function getFromExpression(expr: CaseExpression, key: Key): Either<CaseGetExceptions, CaseAnnotatedExpression> {
   if (isThis(key)) {
     return left(fail(CaseGetExceptionUnreachable, { expr: expr, key: key }))
@@ -78,7 +90,7 @@ export function getFromExpression(expr: CaseExpression, key: Key): Either<CaseGe
       return left(fail(CaseGetExceptionMacro, "unexpanded macro found"))
     } else if (isCaseDictionary(expr)) {
       const name = head(key);
-      return fromNullable(expr.fields.find(entry => !isCaseMacro(entry) && entry.key === name))
+      return fromNullable(expr.fields.find(entry => matchDeclaration(entry, name.toString())))
         .mapLeft(() => fail(CaseGetExceptionNoSuchKey, `no such key '${representKey(key)}'`))
         .chain(data => isCaseMacro(data) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : right(data))
         .chain(({ value }) => isCaseMacro(value) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : getFromAnnotatedExpression(value, tail(key)))
@@ -164,7 +176,7 @@ function upsert<A>(as: A[], finder: (a: A) => boolean, factory: (a: A | undefine
 export function setOnDictionary(expr: CaseDictionary, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseExpression> {
   const name = head(key);
   if (typeof name === "string") {
-    const original = expr.fields.find(entry => !isCaseMacro(entry) && entry.key === name);
+    const original = expr.fields.find(entry => matchDeclaration(entry, name.toString()));
     if (original !== undefined) {
       return right(original)
         .chain(old => isCaseMacro(old) ? left(fail(CaseSetExceptionMacro, "unexpanded macro found")) : right(old))
@@ -173,7 +185,7 @@ export function setOnDictionary(expr: CaseDictionary, key: Key, value: CaseAnnot
           ...expr,
           fields: upsert(
             expr.fields,
-            entry => !isCaseMacro(entry) && entry.key === name,
+            entry => matchDeclaration(entry, name.toString()),
             () => ({ type: CaseDeclarationTypeSignature, key: name, value: newValue }),
           ),
         }))

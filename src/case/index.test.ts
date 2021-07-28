@@ -1,5 +1,5 @@
 import {assert, expect} from "chai";
-import {annotated, dictionary, entry, toCaseAnnotatedExpression} from "./constructor";
+import {annotated, dictionary, entry, toCaseAnnotatedExpression, toCaseLiteral} from "./constructor";
 import {getFromExpression, setOnExpression} from "./index";
 import {parse} from "./parser";
 import {printFile} from "./printer";
@@ -93,7 +93,14 @@ RAS {
 
   it("regex key", () => {
     const parsed = parse(regexedKey);
-    parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+      .map(r => {
+        getFromExpression(r, ["rho", "solver"])
+          .map(e => expect(e).to.be.deep.equal(toCaseLiteral("diagonal")));
+        getFromExpression(r, ["rhoWhatever", "solver"])
+          .map(e => expect(e).to.be.deep.equal(toCaseLiteral("diagonal")));
+      });
   });
 
   it("nonuniform", () => {

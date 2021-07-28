@@ -18,7 +18,7 @@ import {
   CaseMacroQualifiedNameTypeSignature,
   CaseMacroRootSearch, CaseMacroRootSearchTypeSignature,
   CaseNumericLiteral,
-  CaseNumericLiteralTypeSignature,
+  CaseNumericLiteralTypeSignature, CaseRegexDeclaration, CaseRegexDeclarationTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
   CaseStruct,
@@ -119,48 +119,6 @@ namespace Macro {
   type LanguageMacro = TypedLanguage<Spec<typeof rules>>;
 }
 
-namespace Parenthesis {
-  function ruleCharacter(lang: LanguageParenthesis): Parser<string> {
-    return regexp(/[a-zA-Z0-9-_]+/)
-  }
-
-  const ruleParentheses = enclose(string("("), string(")"), "parentheses");
-  const ruleBrackets = enclose(string("["), string("]"), "brackets");
-  const ruleBraces = enclose(string("{"), string("}"), "braces");
-  const ruleChevrons = enclose(string("<"), string(">"), "chevrons");
-
-  function enclose(open: Parser<string>, close: Parser<string>, desc: string): (lang: LanguageParenthesis) => Parser<string> {
-    return (lang: LanguageParenthesis) => seq(
-      open,
-      option(lang.ruleMatchedParentheses),
-      close,
-    )
-      .map(([open, text, close]) => `${open}${text ?? ""}${close}`)
-      .desc(desc)
-  }
-
-  function ruleMatchedParentheses(lang: LanguageParenthesis): Parser<string> {
-    return alt(
-      lang.ruleParentheses,
-      lang.ruleBrackets,
-      lang.ruleBraces,
-      lang.ruleChevrons,
-      lang.ruleCharacter,
-    )
-  }
-
-  export const rules = {
-    ruleMatchedParentheses,
-    ruleCharacter,
-    ruleParentheses,
-    ruleBrackets,
-    ruleBraces,
-    ruleChevrons,
-  };
-
-  type LanguageParenthesis = TypedLanguage<Spec<typeof rules>>;
-}
-
 export type Dimension = [number, number, number, number, number, number, number];
 
 // Possible classes
@@ -246,7 +204,10 @@ function ruleBooleanLiteral(lang: LanguageFoam): Parser<CaseBooleanLiteral> {
 }
 
 function ruleStringLiteral(lang: LanguageFoam): Parser<CaseStringLiteral> {
-  return lang.ruleString
+  return alt(
+    lang.ruleDoubleQuote,
+    lang.ruleString,
+  )
     .map(x => ({ type: CaseStringLiteralTypeSignature, data: x }))
     .desc("stringLiteral")
 }
@@ -399,10 +360,21 @@ function ruleDeclaration(lang: LanguageFoam): Parser<CaseDeclaration> {
     .desc("declaration")
 }
 
+function ruleRegexDeclaration(lang: LanguageFoam): Parser<CaseRegexDeclaration> {
+  return seq(lang.ruleDoubleQuote, alt2(lang.ruleAnnotatedExpression, lang.ruleMacro))
+    .map(([key, value]) => ({
+      type: CaseRegexDeclarationTypeSignature,
+      pattern: key,
+      value: value,
+    }))
+    .desc("regexDeclaration")
+}
+
 function ruleDictionary(lang: LanguageFoam): Parser<CaseDictionary> {
   return word("{")
-    .then(alt2(
+    .then(alt3(
       lang.ruleDeclaration,
+      lang.ruleRegexDeclaration,
       lang.ruleMacro,
     ).many())
     .skip(word("}"))
@@ -461,13 +433,13 @@ const rules = {
   ruleAnnotatedExpression,
   ruleArray,
   ruleDeclaration,
+  ruleRegexDeclaration,
   ruleDictionary,
   ruleFoamDictionary,
   ruleFoamArray,
   ruleFoam,
 
   ...Macro.rules,
-  ...Parenthesis.rules,
 };
 
 type TypeOf<T> = T extends (...args: any[]) => Parser<infer R> ? R : never;

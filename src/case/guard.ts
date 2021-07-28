@@ -26,7 +26,7 @@ import {
   CaseMacroRootSearchTypeSignature,
   CaseNode,
   CaseNumericLiteral,
-  CaseNumericLiteralTypeSignature,
+  CaseNumericLiteralTypeSignature, CaseRegexDeclaration, CaseRegexDeclarationTypeSignature,
   CaseStringLiteral,
   CaseStringLiteralTypeSignature,
   CaseStruct,
@@ -64,6 +64,10 @@ export function isCaseDictionary(x: CaseNode): x is CaseDictionary {
 
 export function isCaseDeclaration(x: CaseNode): x is CaseDeclaration {
   return x.type === CaseDeclarationTypeSignature
+}
+
+export function isCaseRegexDeclaration(x: CaseNode): x is CaseRegexDeclaration {
+  return x.type === CaseRegexDeclarationTypeSignature
 }
 
 export function isCaseArray(x: CaseNode): x is CaseArray {
