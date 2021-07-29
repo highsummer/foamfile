@@ -70,6 +70,19 @@ describe("case", () => {
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
+  it("setter test 3", () => {
+    parsed
+      .chain(d => setOnExpression(d, ["c"], toCaseAnnotatedExpression(4)))
+      .map(x => expect(x).to.be.deep.equal(dictionary(
+        entry("a", dictionary(
+          entry("b", 1),
+          entry("c", 2),
+        )),
+        entry("c", 4),
+      )))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
   it("header test 1", () => {
     const original = `simulationType "RAS";
 FoamFile {

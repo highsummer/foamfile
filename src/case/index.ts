@@ -31,7 +31,7 @@ function representKey(key: Key): string {
     .join(KeySeparator)
 }
 
-function head(key: Key): Token {
+function head(key: Key): Token | undefined {
   return key[0]
 }
 
@@ -90,10 +90,14 @@ export function getFromExpression(expr: CaseExpression, key: Key): Either<CaseGe
       return left(fail(CaseGetExceptionMacro, "unexpanded macro found"))
     } else if (isCaseDictionary(expr)) {
       const name = head(key);
-      return fromNullable(expr.fields.find(entry => matchDeclaration(entry, name.toString())))
-        .mapLeft(() => fail(CaseGetExceptionNoSuchKey, `no such key '${representKey(key)}'`))
-        .chain(data => isCaseMacro(data) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : right(data))
-        .chain(({ value }) => isCaseMacro(value) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : getFromAnnotatedExpression(value, tail(key)))
+      if (name === undefined) {
+        return left(fail(CaseGetExceptionNoSuchKey, "key reached the end of search"))
+      } else {
+        return fromNullable(expr.fields.find(entry => matchDeclaration(entry, name.toString())))
+          .mapLeft(() => fail(CaseGetExceptionNoSuchKey, `no such key '${representKey(key)}'`))
+          .chain(data => isCaseMacro(data) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : right(data))
+          .chain(({ value }) => isCaseMacro(value) ? left(fail(CaseGetExceptionMacro, "unexpanded macro found")) : getFromAnnotatedExpression(value, tail(key)))
+      }
     } else if (isCaseArray(expr)) {
       const name = head(key);
       const e: Either<CaseGetExceptions, CaseAnnotatedExpression | CaseMacro> = typeof name === "number" ?
@@ -175,7 +179,9 @@ function upsert<A>(as: A[], finder: (a: A) => boolean, factory: (a: A | undefine
 
 export function setOnDictionary(expr: CaseDictionary, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseExpression> {
   const name = head(key);
-  if (typeof name === "string") {
+  if (name === undefined) {
+    return left(fail(CaseSetExceptionUnreachable, "key reached the end of search"))
+  } else if (typeof name === "string") {
     const original = expr.fields.find(entry => matchDeclaration(entry, name.toString()));
     if (original !== undefined) {
       return right(original)
@@ -190,15 +196,29 @@ export function setOnDictionary(expr: CaseDictionary, key: Key, value: CaseAnnot
           ),
         }))
     } else {
-      return setOnNew(tail(key), value)
-        .map(_ => ({ type: CaseDeclarationTypeSignature, key: name, value: toCaseAnnotatedExpression(_) }))
-        .map(newEntry => ({
+      if (isThis(tail(key))) {
+        return right({
           ...expr,
           fields: [
             ...expr.fields,
-            newEntry,
+            {
+              type: CaseDeclarationTypeSignature,
+              key: name,
+              value: value,
+            },
           ]
-        }))
+        })
+      } else {
+        return setOnNew(tail(key), value)
+          .map(_ => ({ type: CaseDeclarationTypeSignature, key: name, value: toCaseAnnotatedExpression(_) }))
+          .map(newEntry => ({
+            ...expr,
+            fields: [
+              ...expr.fields,
+              newEntry,
+            ]
+          }))
+      }
     }
   } else {
     return setOnNew(key, value)
@@ -232,7 +252,9 @@ function arraySet<T>(xs: T[], i: number, x: T): Either<ArrayExceptions, T[]> {
 
 export function setOnArray(expr: CaseArray, key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseExpression> {
   const name = head(key);
-  if (typeof name === "number") {
+  if (name === undefined) {
+    return left(fail(CaseSetExceptionUnreachable, "key reached the end of search"))
+  } else if (typeof name === "number") {
     return arrayGet(expr.fields, name)
       .chainLeft(() => right(value))
       .chain(old => isCaseMacro(old) ? left(fail(CaseSetExceptionMacro, "unexpanded macro found")) : right(old))
@@ -251,7 +273,9 @@ export function setOnArray(expr: CaseArray, key: Key, value: CaseAnnotatedExpres
 
 export function setOnNew(key: Key, value: CaseAnnotatedExpression): Either<CaseSetExceptions, CaseExpression> {
   const name = head(key);
-  if (typeof name === "string") {
+  if (name === undefined) {
+    return left(fail(CaseSetExceptionUnreachable, "key reached the end of search"))
+  } else if (typeof name === "string") {
     return setOnDictionary(EmptyCaseDictionary, key, value)
   } else {
     return setOnArray(EmptyCaseArray, key, value)
