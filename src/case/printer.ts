@@ -58,7 +58,7 @@ export function printFile(x: CaseDictionary): string {
   };
   const others = {
     type: CaseDictionaryTypeSignature,
-    fields: x.fields.filter(entry => !isCaseDeclaration(entry) || entry.key === KeyFoamFile)
+    fields: x.fields.filter(entry => !isCaseDeclaration(entry) || entry.key !== KeyFoamFile)
   };
 
   function printOther() {

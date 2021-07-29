@@ -6,41 +6,68 @@ import {printFile} from "./printer";
 import {CaseDictionary} from "./types";
 
 describe("case", () => {
-  const text = `a {
+  const text1 = `a {
     b 1;
     c 2;
   }`;
 
-  const parsed = parse(text);
+  const parsed1 = parse(text1);
 
-  const expectation = dictionary(
+  const expectation1 = dictionary(
     entry("a", dictionary(
       entry("b", 1),
       entry("c", 2),
     )),
   );
 
+  const text2 = `a {
+    b 1;
+    c 2;
+  }
+  
+  d {
+    e 3;
+    f {
+      g 4;
+    }
+  }`;
+
+  const parsed2 = parse(text2);
+
+  const expectation2 = dictionary(
+    entry("a", dictionary(
+      entry("b", 1),
+      entry("c", 2),
+    )),
+    entry("d", dictionary(
+      entry("e", 3),
+      entry("f", dictionary(
+        entry("g", 4),
+      )),
+    )),
+  );
+
   it("parser test 1", () => {
-    parse(`a 1;`)
-      .map(d => expect(d).to.be.deep.equal(dictionary(entry("a", 1))))
+    parsed1
+      .map(d => expect(d).to.be.deep.equal(expectation1))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("parser test 2", () => {
-    parsed
-      .map(d => expect(d).to.be.deep.equal(expectation))
+    parsed2
+      .map(d => expect(d).to.be.deep.equal(expectation2))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 1", () => {
-    parsed
+    parsed1
       .chain(d => getFromExpression(d, ["a", "b"]))
       .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(1)))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 2", () => {
-    parsed
+    parsed1
       .chain(d => getFromExpression(d, ["a"]))
       .map(x => expect(x).to.be.deep.equal(annotated(dictionary(
         entry("b", 1),
@@ -49,8 +76,32 @@ describe("case", () => {
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
+  it("getter test 3", () => {
+    parsed2
+      .chain(d => getFromExpression(d, ["a", "b"]))
+      .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(1)))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("getter test 4", () => {
+    parsed2
+      .chain(d => getFromExpression(d, ["a"]))
+      .map(x => expect(x).to.be.deep.equal(annotated(dictionary(
+        entry("b", 1),
+        entry("c", 2),
+      ))))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("getter test 5", () => {
+    parsed2
+      .chain(d => getFromExpression(d, ["d", "f", "g"]))
+      .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(4)))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
   it("setter test 1", () => {
-    parsed
+    parsed1
       .chain(d => setOnExpression(d, ["a", "b"], toCaseAnnotatedExpression(3)))
       .map(x => expect(x).to.be.deep.equal(dictionary(
         entry("a", dictionary(
@@ -62,7 +113,7 @@ describe("case", () => {
   });
 
   it("setter test 2", () => {
-    parsed
+    parsed1
       .chain(d => setOnExpression(d, ["a"], toCaseAnnotatedExpression(4)))
       .map(x => expect(x).to.be.deep.equal(dictionary(
         entry("a", 4)
@@ -71,7 +122,7 @@ describe("case", () => {
   });
 
   it("setter test 3", () => {
-    parsed
+    parsed1
       .chain(d => setOnExpression(d, ["c"], toCaseAnnotatedExpression(4)))
       .map(x => expect(x).to.be.deep.equal(dictionary(
         entry("a", dictionary(
@@ -79,6 +130,19 @@ describe("case", () => {
           entry("c", 2),
         )),
         entry("c", 4),
+      )))
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+  });
+
+  it("setter test 4", () => {
+    parsed1
+      .chain(d => setOnExpression(d, ["a", "d"], toCaseAnnotatedExpression(4)))
+      .map(x => expect(x).to.be.deep.equal(dictionary(
+        entry("a", dictionary(
+          entry("b", 1),
+          entry("c", 2),
+          entry("d", 4),
+        )),
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
