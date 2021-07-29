@@ -192,9 +192,11 @@ function ruleNumber(lang: LanguageFoam): Parser<number> {
 }
 
 function ruleBoolean(lang: LanguageFoam): Parser<boolean> {
-  return alt2(
+  return alt(
     word("true").map(() => true),
+    word("on").map(() => true),
     word("false").map(() => false),
+    word("off").map(() => false),
   ).desc("boolean")
 }
 
