@@ -112,7 +112,11 @@ export function printStruct(x: CaseStruct): string {
 
 export function printLiteral(x: CaseLiteral): string {
   if (isCaseStringLiteral(x)) {
-    return `"${x.data}"`
+    if (/[\s;"]/.exec(x.data) !== null) {
+      return `"${x.data.replace("\"", "\\\"")}"`
+    } else {
+      return x.data
+    }
   } else if (isCaseNumericLiteral(x)) {
     const value = typeof x.data === "number" ? x.data.toString() : `(${x.data.map(String).join(" ")})`;
     const dimension = x.dimension !== undefined ? `[${x.dimension.map(String).join(" ")}] ` : "";
