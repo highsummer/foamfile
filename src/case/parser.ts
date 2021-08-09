@@ -1,46 +1,32 @@
 import {alt, createLanguage, Parser, regexp, seq, string, TypedLanguage, whitespace} from "parsimmon";
-import {
-  CaseAnnotatedExpression,
-  CaseAnnotatedExpressionTypeSignature,
-  CaseArray,
-  CaseArrayTypeSignature,
-  CaseBooleanLiteral,
-  CaseBooleanLiteralTypeSignature,
-  CaseDeclaration,
-  CaseDeclarationTypeSignature,
-  CaseDictionary,
-  CaseDictionaryTypeSignature,
-  CaseDimensionLiteral,
-  CaseDimensionLiteralTypeSignature,
-  CaseExpression,
-  CaseLiteral,
-  CaseMacro,
-  CaseMacroIdentifier,
-  CaseMacroIdentifierTypeSignature,
-  CaseMacroParentSearch,
-  CaseMacroParentSearchTypeSignature,
-  CaseMacroPreprocessor, CaseMacroPreprocessorTypeSignature,
-  CaseMacroQualifiedName,
-  CaseMacroQualifiedNameTypeSignature,
-  CaseMacroRootSearch,
-  CaseMacroRootSearchTypeSignature,
-  CaseNumericLiteral,
-  CaseNumericLiteralTypeSignature,
-  CaseRegexDeclaration,
-  CaseRegexDeclarationTypeSignature,
-  CaseStringLiteral,
-  CaseStringLiteralTypeSignature,
-  CaseStruct,
-  CaseUnparsed,
-  CaseUnparsedTypeSignature,
-  Vector
-} from "./types";
 import {Dictionary, Exception, fail} from "../utils";
 import {Either, left, right} from "fp-chainer/lib/either";
-import {toCaseLiteral} from "./constructor";
+import {
+  CaseMacro,
+  CaseMacroIdentifier,
+  CaseMacroParentSearch, CaseMacroPreprocessor,
+  CaseMacroQualifiedName,
+  CaseMacroRootSearch
+} from "./caseMacro";
+import {
+  CaseBooleanLiteral,
+  CaseDimensionLiteral,
+  CaseLiteral,
+  CaseNumericLiteral,
+  CaseStringLiteral
+} from "./caseLiteral";
+import {Vector} from "./helpers";
+import {CaseStruct} from "./caseStruct";
+import {CaseExpression} from "./caseExpression";
+import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
+import {CaseUnparsed} from "./caseUnparsed";
+import {CaseArray} from "./caseArray";
+import {CaseDeclaration} from "./caseDeclaration";
+import {CaseRegexDeclaration} from "./caseRegexDeclaration";
+import {CaseDictionary} from "./caseDictionary";
 
 namespace Macro {
-  function ruleMacroInner(lang: LanguageMacro): Parser<CaseMacro> {
+  function ruleMacroInner(lang: LanguageMacro): Parser<CaseMacro.Type> {
     return alt3(
       lang.ruleParentSearch,
       lang.ruleQualifiedName,
@@ -49,73 +35,73 @@ namespace Macro {
       .desc("macro")
   }
 
-  function ruleRootSearch(lang: LanguageMacro): Parser<CaseMacroRootSearch> {
+  function ruleRootSearch(lang: LanguageMacro): Parser<CaseMacroRootSearch.Type> {
     return seq(
       string(":"),
       lang.ruleMacroInner,
     )
       .map(([_, node]) => ({
-        type: CaseMacroRootSearchTypeSignature,
+        type: CaseMacroRootSearch.TypeSignature,
         node: node,
       }))
       .desc("rootSearch")
   }
 
-  function ruleParentSearch(lang: LanguageMacro): Parser<CaseMacroParentSearch> {
+  function ruleParentSearch(lang: LanguageMacro): Parser<CaseMacroParentSearch.Type> {
     return seq(
       regexp(/\.\.+/),
       lang.ruleMacroInner,
     )
       .map(([periods, node]) => new Array(periods.length - 2)
         .fill(0)
-        .reduce<CaseMacroParentSearch>((acc, _) => ({
-          type: CaseMacroParentSearchTypeSignature,
+        .reduce<CaseMacroParentSearch.Type>((acc, _) => ({
+          type: CaseMacroParentSearch.TypeSignature,
           node: acc,
         }), ({
-          type: CaseMacroParentSearchTypeSignature,
+          type: CaseMacroParentSearch.TypeSignature,
           node: node,
         }))
       )
       .desc("parentSearch")
   }
 
-  function ruleQualifiedName(lang: LanguageMacro): Parser<CaseMacroQualifiedName> {
+  function ruleQualifiedName(lang: LanguageMacro): Parser<CaseMacroQualifiedName.Type> {
     return seq(
       lang.ruleIdentifier,
       string("."),
       lang.ruleMacroInner,
     )
       .map(([namespace, _, node]) => ({
-        type: CaseMacroQualifiedNameTypeSignature,
+        type: CaseMacroQualifiedName.TypeSignature,
         namespace: namespace.name,
         node: node,
       }))
       .desc("qualifiedName")
   }
 
-  function ruleIdentifier(lang: LanguageMacro): Parser<CaseMacroIdentifier> {
+  function ruleIdentifier(lang: LanguageMacro): Parser<CaseMacroIdentifier.Type> {
     return regexp(/[a-zA-Z0-9_.:]+/)
       .map(name => ({
-        type: CaseMacroIdentifierTypeSignature,
+        type: CaseMacroIdentifier.TypeSignature,
         name: name,
       }))
       .desc("identifier")
   }
 
-  function rulePreprocessor(lang: LanguageFoam): Parser<CaseMacroPreprocessor> {
+  function rulePreprocessor(lang: LanguageFoam): Parser<CaseMacroPreprocessor.Type> {
     return seq(
       token(regexp(/(#include(IfPresent|Etc|Func)?)|(#remove)/)),
       alt(lang.ruleDoubleQuote, lang.ruleString).many()
     )
       .map(([directive, args]) => ({
-        type: CaseMacroPreprocessorTypeSignature,
+        type: CaseMacroPreprocessor.TypeSignature,
         directive: directive.slice(1),
         arguments: args,
       }))
       .desc("preprocessor")
   }
 
-  function ruleMacroOuter(lang: LanguageMacro): Parser<CaseMacro> {
+  function ruleMacroOuter(lang: LanguageMacro): Parser<CaseMacro.Type> {
     return alt2(
       seq(
         string("$"),
@@ -225,37 +211,39 @@ function ruleVector(lang: LanguageFoam): Parser<Vector> {
     .desc("vector")
 }
 
-function ruleBooleanLiteral(lang: LanguageFoam): Parser<CaseBooleanLiteral> {
+function ruleBooleanLiteral(lang: LanguageFoam): Parser<CaseBooleanLiteral.Type> {
   return lang.ruleBoolean
-    .map(x => ({ type: CaseBooleanLiteralTypeSignature, data: x }))
+    .map(x => {
+      return ({type: CaseBooleanLiteral.TypeSignature, data: x});
+    })
     .desc("booleanLiteral")
 }
 
-function ruleStringLiteral(lang: LanguageFoam): Parser<CaseStringLiteral> {
+function ruleStringLiteral(lang: LanguageFoam): Parser<CaseStringLiteral.Type> {
   return alt(
     lang.ruleDoubleQuote,
     lang.ruleString,
   )
-    .map(x => ({ type: CaseStringLiteralTypeSignature, data: x }))
+    .map(x => ({ type: CaseStringLiteral.TypeSignature, data: x }))
     .desc("stringLiteral")
 }
 
-function ruleNumericLiteral(lang: LanguageFoam): Parser<CaseNumericLiteral> {
+function ruleNumericLiteral(lang: LanguageFoam): Parser<CaseNumericLiteral.Type> {
   return seq(
     option(lang.ruleDimension),
     alt2(lang.ruleVector, lang.ruleNumber),
   )
-    .map(([dim, val]) => ({ type: CaseNumericLiteralTypeSignature, dimension: dim, data: val }))
+    .map(([dim, val]) => ({ type: CaseNumericLiteral.TypeSignature, dimension: dim, data: val }))
     .desc("numericLiteral")
 }
 
-function ruleDimensionLiteral(lang: LanguageFoam): Parser<CaseDimensionLiteral> {
+function ruleDimensionLiteral(lang: LanguageFoam): Parser<CaseDimensionLiteral.Type> {
   return lang.ruleDimension
-    .map(dim => ({ type: CaseDimensionLiteralTypeSignature, data: dim }))
+    .map(dim => ({ type: CaseDimensionLiteral.TypeSignature, data: dim }))
     .desc("dimensionLiteral")
 }
 
-function ruleLiteral(lang: LanguageFoam): Parser<CaseLiteral> {
+function ruleLiteral(lang: LanguageFoam): Parser<CaseLiteral.Type> {
   return alt4(
     lang.ruleBooleanLiteral,
     lang.ruleNumericLiteral,
@@ -265,7 +253,7 @@ function ruleLiteral(lang: LanguageFoam): Parser<CaseLiteral> {
     .desc("literal")
 }
 
-function ruleStruct(lang: LanguageFoam): Parser<CaseStruct> {
+function ruleStruct(lang: LanguageFoam): Parser<CaseStruct.Type> {
   return alt2(
     lang.ruleArray,
     lang.ruleDictionary,
@@ -273,7 +261,7 @@ function ruleStruct(lang: LanguageFoam): Parser<CaseStruct> {
     .desc("struct")
 }
 
-function ruleExpression(lang: LanguageFoam): Parser<CaseExpression> {
+function ruleExpression(lang: LanguageFoam): Parser<CaseExpression.Type> {
   return alt3(
     lang.ruleLiteral,
     lang.ruleArray,
@@ -282,7 +270,7 @@ function ruleExpression(lang: LanguageFoam): Parser<CaseExpression> {
     .desc("expression")
 }
 
-function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpression> {
+function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpression.Type> {
   return alt2(
     seq(
       word("nonuniform"),
@@ -294,10 +282,10 @@ function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpress
       option(word(";")).map(o => o ?? ""),
     )
       .map(tokens => ({
-        type: CaseAnnotatedExpressionTypeSignature,
-        annotations: [toCaseLiteral(tokens[0]), toCaseLiteral(tokens[1])],
+        type: CaseAnnotatedExpression.TypeSignature,
+        annotations: [CaseLiteral.to(tokens[0]), CaseLiteral.to(tokens[1])],
         value: ({
-          type: CaseUnparsedTypeSignature,
+          type: CaseUnparsed.TypeSignature,
           data: tokens.slice(2).join(" "),
         })
       })),
@@ -311,10 +299,10 @@ function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpress
       option(word(";")).map(o => o ?? ""),
     )
       .map(tokens => ({
-        type: CaseAnnotatedExpressionTypeSignature,
-        annotations: [toCaseLiteral(tokens[0]), toCaseLiteral(tokens[1])],
+        type: CaseAnnotatedExpression.TypeSignature,
+        annotations: [CaseLiteral.to(tokens[0]), CaseLiteral.to(tokens[1])],
         value: ({
-          type: CaseUnparsedTypeSignature,
+          type: CaseUnparsed.TypeSignature,
           data: tokens.slice(2).join(" "),
         })
       }))
@@ -322,7 +310,7 @@ function ruleUnparsedNonuniform(lang: LanguageFoam): Parser<CaseAnnotatedExpress
     .desc("unparsedNonuniform")
 }
 
-function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpression> {
+function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpression.Type> {
   return alt4(
     lang.ruleUnparsedNonuniform
       .map(anno => [anno.annotations, anno.value] as const)
@@ -333,7 +321,7 @@ function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpres
     )
       .many()
       .skip(word(";"))
-      .map(literals => [literals.slice(0, literals.length - 1), literals[literals.length - 1]] as [CaseLiteral[], CaseLiteral])
+      .map(literals => [literals.slice(0, literals.length - 1), literals[literals.length - 1]] as [CaseLiteral.Type[], CaseLiteral.Type])
       .desc("annotatedLiteral"),
     seq(
       alt2(
@@ -356,14 +344,14 @@ function ruleAnnotatedExpression(lang: LanguageFoam): Parser<CaseAnnotatedExpres
       .desc("annotatedArray"),
   )
     .map(([annotations, value]) => ({
-      type: CaseAnnotatedExpressionTypeSignature,
+      type: CaseAnnotatedExpression.TypeSignature,
       annotations: annotations,
       value: value
     }))
     .desc("annotatedExpression")
 }
 
-function ruleArray(lang: LanguageFoam): Parser<CaseArray> {
+function ruleArray(lang: LanguageFoam): Parser<CaseArray.Type> {
   return option(lang.ruleNumber)
     .then(word("("))
     .then(alt2(
@@ -372,33 +360,33 @@ function ruleArray(lang: LanguageFoam): Parser<CaseArray> {
     ).many())
     .skip(word(")"))
     .map(fields => ({
-      type: CaseArrayTypeSignature,
-      fields: fields.map(x => ({ type: CaseAnnotatedExpressionTypeSignature, annotations: [], value: x })),
+      type: CaseArray.TypeSignature,
+      fields: fields.map(x => ({ type: CaseAnnotatedExpression.TypeSignature, annotations: [], value: x })),
     }))
     .desc("array")
 }
 
-function ruleDeclaration(lang: LanguageFoam): Parser<CaseDeclaration> {
+function ruleDeclaration(lang: LanguageFoam): Parser<CaseDeclaration.Type> {
   return seq(lang.ruleString, alt2(lang.ruleAnnotatedExpression, lang.ruleMacro))
     .map(([key, value]) => ({
-      type: CaseDeclarationTypeSignature,
+      type: CaseDeclaration.TypeSignature,
       key: key,
       value: value,
     }))
     .desc("declaration")
 }
 
-function ruleRegexDeclaration(lang: LanguageFoam): Parser<CaseRegexDeclaration> {
+function ruleRegexDeclaration(lang: LanguageFoam): Parser<CaseRegexDeclaration.Type> {
   return seq(lang.ruleDoubleQuote, alt2(lang.ruleAnnotatedExpression, lang.ruleMacro))
     .map(([key, value]) => ({
-      type: CaseRegexDeclarationTypeSignature,
+      type: CaseRegexDeclaration.TypeSignature,
       pattern: key,
       value: value,
     }))
     .desc("regexDeclaration")
 }
 
-function ruleDictionary(lang: LanguageFoam): Parser<CaseDictionary> {
+function ruleDictionary(lang: LanguageFoam): Parser<CaseDictionary.Type> {
   return word("{")
     .then(alt3(
       lang.ruleDeclaration,
@@ -407,22 +395,22 @@ function ruleDictionary(lang: LanguageFoam): Parser<CaseDictionary> {
     ).many())
     .skip(word("}"))
     .map(entries => ({
-      type: CaseDictionaryTypeSignature,
+      type: CaseDictionary.TypeSignature,
       fields: entries,
     }))
     .desc("dictionary")
 }
 
-function ruleFoamDictionary(lang: LanguageFoam): Parser<CaseDictionary> {
+function ruleFoamDictionary(lang: LanguageFoam): Parser<CaseDictionary.Type> {
   return lang.ruleDeclaration.many()
     .map(entries => ({
-      type: CaseDictionaryTypeSignature,
+      type: CaseDictionary.TypeSignature,
       fields: entries,
     }))
     .desc("foamDictionary")
 }
 
-function ruleFoamArray(lang: LanguageFoam): Parser<CaseDictionary> {
+function ruleFoamArray(lang: LanguageFoam): Parser<CaseDictionary.Type> {
   return seq(
     lang.ruleDeclaration,
     lang.ruleNumber,
@@ -431,13 +419,13 @@ function ruleFoamArray(lang: LanguageFoam): Parser<CaseDictionary> {
     word(")"),
   )
     .map(([header, length, open, pairs, close]) => ({
-      type: CaseDictionaryTypeSignature,
+      type: CaseDictionary.TypeSignature,
       fields: [header, ...pairs],
     }))
     .desc("foamArray")
 }
 
-function ruleFoam(lang: LanguageFoam): Parser<CaseDictionary> {
+function ruleFoam(lang: LanguageFoam): Parser<CaseDictionary.Type> {
   return alt2(lang.ruleFoamArray, lang.ruleFoamDictionary)
     .skip(token(word("")))
     .desc("foam")
@@ -478,7 +466,7 @@ const foamLang = createLanguage(rules);
 
 export const ParserExceptionCannotParse = "core.case.parser.CannotParse" as const;
 
-export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseDictionary> {
+export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseDictionary.Type> {
   try {
     return right(foamLang.ruleFoam.tryParse(input))
   } catch (e) {

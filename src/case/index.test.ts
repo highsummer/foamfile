@@ -1,9 +1,11 @@
-import {assert, expect} from "chai";
-import {annotated, dictionary, entry, toCaseAnnotatedExpression, toCaseLiteral} from "./constructor";
-import {getFromExpression, setOnExpression} from "./index";
 import {parse} from "./parser";
-import {printFile} from "./printer";
-import {CaseDictionary} from "./types";
+import {CaseDictionary} from "./caseDictionary";
+import {CaseDeclaration} from "./caseDeclaration";
+import {expect} from "chai";
+import assert = require("assert");
+import {CaseExpression} from "./caseExpression";
+import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
+import {CaseLiteral} from "./caseLiteral";
 
 describe("case", () => {
   const text1 = `a {
@@ -13,10 +15,10 @@ describe("case", () => {
 
   const parsed1 = parse(text1);
 
-  const expectation1 = dictionary(
-    entry("a", dictionary(
-      entry("b", 1),
-      entry("c", 2),
+  const expectation1 = CaseDictionary.build(
+    CaseDeclaration.build("a", CaseDictionary.build(
+      CaseDeclaration.build("b", 1),
+      CaseDeclaration.build("c", 2),
     )),
   );
 
@@ -34,15 +36,15 @@ describe("case", () => {
 
   const parsed2 = parse(text2);
 
-  const expectation2 = dictionary(
-    entry("a", dictionary(
-      entry("b", 1),
-      entry("c", 2),
+  const expectation2 = CaseDictionary.build(
+    CaseDeclaration.build("a", CaseDictionary.build(
+      CaseDeclaration.build("b", 1),
+      CaseDeclaration.build("c", 2),
     )),
-    entry("d", dictionary(
-      entry("e", 3),
-      entry("f", dictionary(
-        entry("g", 4),
+    CaseDeclaration.build("d", CaseDictionary.build(
+      CaseDeclaration.build("e", 3),
+      CaseDeclaration.build("f", CaseDictionary.build(
+        CaseDeclaration.build("g", 4),
       )),
     )),
   );
@@ -61,52 +63,52 @@ describe("case", () => {
 
   it("getter test 1", () => {
     parsed1
-      .chain(d => getFromExpression(d, ["a", "b"]))
-      .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(1)))
+      .chain(d => CaseExpression.get(d, ["a", "b"]))
+      .map(x => expect(x).to.be.deep.equal(CaseAnnotatedExpression.to(1)))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 2", () => {
     parsed1
-      .chain(d => getFromExpression(d, ["a"]))
-      .map(x => expect(x).to.be.deep.equal(annotated(dictionary(
-        entry("b", 1),
-        entry("c", 2),
+      .chain(d => CaseExpression.get(d, ["a"]))
+      .map(x => expect(x).to.be.deep.equal(CaseAnnotatedExpression.build(CaseDictionary.build(
+        CaseDeclaration.build("b", 1),
+        CaseDeclaration.build("c", 2),
       ))))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 3", () => {
     parsed2
-      .chain(d => getFromExpression(d, ["a", "b"]))
-      .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(1)))
+      .chain(d => CaseExpression.get(d, ["a", "b"]))
+      .map(x => expect(x).to.be.deep.equal(CaseAnnotatedExpression.to(1)))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 4", () => {
     parsed2
-      .chain(d => getFromExpression(d, ["a"]))
-      .map(x => expect(x).to.be.deep.equal(annotated(dictionary(
-        entry("b", 1),
-        entry("c", 2),
+      .chain(d => CaseExpression.get(d, ["a"]))
+      .map(x => expect(x).to.be.deep.equal(CaseAnnotatedExpression.build(CaseDictionary.build(
+        CaseDeclaration.build("b", 1),
+        CaseDeclaration.build("c", 2),
       ))))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("getter test 5", () => {
     parsed2
-      .chain(d => getFromExpression(d, ["d", "f", "g"]))
-      .map(x => expect(x).to.be.deep.equal(toCaseAnnotatedExpression(4)))
+      .chain(d => CaseExpression.get(d, ["d", "f", "g"]))
+      .map(x => expect(x).to.be.deep.equal(CaseAnnotatedExpression.to(4)))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("setter test 1", () => {
     parsed1
-      .chain(d => setOnExpression(d, ["a", "b"], toCaseAnnotatedExpression(3)))
-      .map(x => expect(x).to.be.deep.equal(dictionary(
-        entry("a", dictionary(
-          entry("b", 3),
-          entry("c", 2),
+      .chain(d => CaseExpression.set(d, ["a", "b"], CaseAnnotatedExpression.to(3)))
+      .map(x => expect(x).to.be.deep.equal(CaseDictionary.build(
+        CaseDeclaration.build("a", CaseDictionary.build(
+          CaseDeclaration.build("b", 3),
+          CaseDeclaration.build("c", 2),
         )),
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
@@ -114,34 +116,34 @@ describe("case", () => {
 
   it("setter test 2", () => {
     parsed1
-      .chain(d => setOnExpression(d, ["a"], toCaseAnnotatedExpression(4)))
-      .map(x => expect(x).to.be.deep.equal(dictionary(
-        entry("a", 4)
+      .chain(d => CaseExpression.set(d, ["a"], CaseAnnotatedExpression.to(4)))
+      .map(x => expect(x).to.be.deep.equal(CaseDictionary.build(
+        CaseDeclaration.build("a", 4)
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("setter test 3", () => {
     parsed1
-      .chain(d => setOnExpression(d, ["c"], toCaseAnnotatedExpression(4)))
-      .map(x => expect(x).to.be.deep.equal(dictionary(
-        entry("a", dictionary(
-          entry("b", 1),
-          entry("c", 2),
+      .chain(d => CaseExpression.set(d, ["c"], CaseAnnotatedExpression.to(4)))
+      .map(x => expect(x).to.be.deep.equal(CaseDictionary.build(
+        CaseDeclaration.build("a", CaseDictionary.build(
+          CaseDeclaration.build("b", 1),
+          CaseDeclaration.build("c", 2),
         )),
-        entry("c", 4),
+        CaseDeclaration.build("c", 4),
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("setter test 4", () => {
     parsed1
-      .chain(d => setOnExpression(d, ["a", "d"], toCaseAnnotatedExpression(4)))
-      .map(x => expect(x).to.be.deep.equal(dictionary(
-        entry("a", dictionary(
-          entry("b", 1),
-          entry("c", 2),
-          entry("d", 4),
+      .chain(d => CaseExpression.set(d, ["a", "d"], CaseAnnotatedExpression.to(4)))
+      .map(x => expect(x).to.be.deep.equal(CaseDictionary.build(
+        CaseDeclaration.build("a", CaseDictionary.build(
+          CaseDeclaration.build("b", 1),
+          CaseDeclaration.build("c", 2),
+          CaseDeclaration.build("d", 4),
         )),
       )))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
@@ -152,7 +154,7 @@ describe("case", () => {
 FoamFile {
     version  2;
     format   "ascii";
-    class    "dictionary";
+    class    "CaseDictionary.build";
     location "constant";
     object   "turbulenceProperties";
 }
@@ -165,7 +167,7 @@ RAS {
     const parsed = parse(original);
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
 
-    const rePrinted = printFile(parsed.orNull()!);
+    const rePrinted = CaseDictionary.printFile(parsed.orNull()!);
   });
 
   it("regex key", () => {
@@ -173,10 +175,10 @@ RAS {
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
       .map(r => {
-        getFromExpression(r, ["rho", "solver"])
-          .map(e => expect(e).to.be.deep.equal(toCaseLiteral("diagonal")));
-        getFromExpression(r, ["rhoWhatever", "solver"])
-          .map(e => expect(e).to.be.deep.equal(toCaseLiteral("diagonal")));
+        CaseExpression.get(r, ["rho", "solver"])
+          .map(e => expect(e).to.be.deep.equal(CaseLiteral.to("diagonal")));
+        CaseExpression.get(r, ["rhoWhatever", "solver"])
+          .map(e => expect(e).to.be.deep.equal(CaseLiteral.to("diagonal")));
       });
   });
 
@@ -189,7 +191,7 @@ RAS {
     const parsed = parse(nonUniform);
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
-      .map(_ => printFile(_));
+      .map(_ => CaseDictionary.printFile(_));
   });
 });
 
