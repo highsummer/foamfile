@@ -16,6 +16,7 @@ export namespace VectorField {
       seq(word("format"), lang.ruleString, word(";")),
       seq(word("class"), word("vectorField"), word(";")),
       seq(word("object"), lang.ruleString, word(";")),
+      seq(word("location"), lang.ruleString, word(";")),
     )
       .map(([key, value, terminator]) => CaseDeclaration.build(key, value))
       .desc("ruleHeaderEntry")
