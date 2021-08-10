@@ -7,7 +7,7 @@ import {Either, left, right} from "fp-chainer/lib/either";
 import {Exception, fail} from "../utils";
 import {CaseLabelList} from "../case/caseLabelList";
 
-export namespace FaceList {
+export namespace LabelList {
   function ruleHeaderEntry<Lang extends Language>(lang: Lang): Parser<CaseDeclaration.Type> {
     return alt(
       seq(word("version"), lang.ruleString, word(";")),
