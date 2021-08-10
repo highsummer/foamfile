@@ -5,6 +5,8 @@ import {CaseArray} from "./caseArray";
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseExpression} from "./caseExpression";
 
+export type Dimension = [number, number, number, number, number, number, number];
+
 const KeySeparator = ".";
 export type Key = Token[];
 export type Token = number | string;

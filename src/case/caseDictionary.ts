@@ -8,11 +8,14 @@ import {
   CaseSetExceptionMacro,
   CaseSetExceptions,
   CaseSetExceptionUnreachable,
-  head, indent,
+  head,
+  indent,
   isThis,
-  Key, KeyFoamFile,
+  Key,
+  KeyFoamFile,
   setOnNew,
-  tail, upsert
+  tail,
+  upsert
 } from "./index";
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseExpression} from "./caseExpression";

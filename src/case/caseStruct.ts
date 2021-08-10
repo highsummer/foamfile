@@ -5,8 +5,8 @@ import {assertNever} from "../utils";
 
 export namespace CaseStruct {
   export const guards = [
-    CaseDictionary.is,
-    CaseArray.is,
+    () => CaseDictionary.is,
+    () => CaseArray.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;

@@ -1,4 +1,3 @@
-import {parse} from "./parser";
 import {CaseDictionary} from "./caseDictionary";
 import {CaseDeclaration} from "./caseDeclaration";
 import {expect} from "chai";
@@ -6,6 +5,9 @@ import assert = require("assert");
 import {CaseExpression} from "./caseExpression";
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseLiteral} from "./caseLiteral";
+import {Dictionary} from "../parse/dictionary";
+import {VectorField} from "../parse/vectorField";
+import {FaceList} from "../parse/faceList";
 
 describe("case", () => {
   const text1 = `a {
@@ -13,7 +15,7 @@ describe("case", () => {
     c 2;
   }`;
 
-  const parsed1 = parse(text1);
+  const parsed1 = Dictionary.parse(text1);
 
   const expectation1 = CaseDictionary.build(
     CaseDeclaration.build("a", CaseDictionary.build(
@@ -34,7 +36,7 @@ describe("case", () => {
     }
   }`;
 
-  const parsed2 = parse(text2);
+  const parsed2 = Dictionary.parse(text2);
 
   const expectation2 = CaseDictionary.build(
     CaseDeclaration.build("a", CaseDictionary.build(
@@ -49,13 +51,13 @@ describe("case", () => {
     )),
   );
 
-  it("parser test 1", () => {
+  it("Dictionary.parser test 1", () => {
     parsed1
       .map(d => expect(d).to.be.deep.equal(expectation1))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
-  it("parser test 2", () => {
+  it("Dictionary.parser test 2", () => {
     parsed2
       .map(d => expect(d).to.be.deep.equal(expectation2))
       .mapLeft(l => assert.fail(JSON.stringify(l)));
@@ -164,14 +166,14 @@ RAS {
     printCoeffs "on";
 }`;
 
-    const parsed = parse(original);
+    const parsed = Dictionary.parse(original);
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
 
     const rePrinted = CaseDictionary.printFile(parsed.orNull()!);
   });
 
   it("regex key", () => {
-    const parsed = parse(regexedKey);
+    const parsed = Dictionary.parse(regexedKey);
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
       .map(r => {
@@ -183,15 +185,27 @@ RAS {
   });
 
   it("nonuniform", () => {
-    const parsed = parse(nonUniform);
+    const parsed = Dictionary.parse(nonUniform);
     parsed.mapLeft(l => assert.fail(JSON.stringify(l)));
   });
 
   it("macros", () => {
-    const parsed = parse(nonUniform);
+    const parsed = Dictionary.parse(nonUniform);
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
       .map(_ => CaseDictionary.printFile(_));
+  });
+
+  it("vector field", () => {
+    const parsed = VectorField.parse(vectorField);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+  });
+
+  it("faceList", () => {
+    const parsed = FaceList.parse(faceList);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
   });
 });
 
@@ -229,3 +243,35 @@ functions
     a $a;
     #includeFunc mag(U)
 }`;
+
+const vectorField = `FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       vectorField;
+    object      points;
+}
+
+4
+(
+(-17.5492 0.306481 0)
+(-17.5472 0.397851 0)
+(-17.5391 0.49775 0)
+(-17.5189 0.60624 0)
+)`
+
+const faceList = `FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       faceList;
+    object      faces;
+}
+
+4
+(
+4(156 0 78 235)
+4(157 236 79 1)
+4(156 235 236 157)
+4(158 237 80 2)
+)`

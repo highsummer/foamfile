@@ -74,11 +74,11 @@ export namespace CaseMacroPreprocessor {
 
 export namespace CaseMacro {
   export const guards = [
-    CaseMacroIdentifier.is,
-    CaseMacroQualifiedName.is,
-    CaseMacroParentSearch.is,
-    CaseMacroRootSearch.is,
-    CaseMacroPreprocessor.is,
+    () => CaseMacroIdentifier.is,
+    () => CaseMacroQualifiedName.is,
+    () => CaseMacroParentSearch.is,
+    () => CaseMacroRootSearch.is,
+    () => CaseMacroPreprocessor.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;

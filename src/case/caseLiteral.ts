@@ -1,10 +1,6 @@
-import {
-  FromGuard, predicate,
-  Sum,
-  unionPredicate, Vector
-} from "./helpers";
-import {Dimension} from "./parser";
+import {FromGuard, predicate, Sum, unionPredicate, Vector} from "./helpers";
 import {assertNever} from "../utils";
+import {Dimension} from "./index";
 
 export type CaseLiteralLike = CaseLiteral.Type | Vector | string | number | boolean;
 
@@ -47,10 +43,10 @@ export namespace CaseDimensionLiteral {
 
 export namespace CaseLiteral {
   export const guards = [
-    CaseStringLiteral.is,
-    CaseBooleanLiteral.is,
-    CaseNumericLiteral.is,
-    CaseDimensionLiteral.is,
+    () => CaseStringLiteral.is,
+    () => CaseBooleanLiteral.is,
+    () => CaseNumericLiteral.is,
+    () => CaseDimensionLiteral.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;

@@ -4,14 +4,7 @@ import {CaseLiteral, CaseLiteralLike} from "./caseLiteral";
 import {CaseMacro} from "./caseMacro";
 import {Either, left, right} from "fp-chainer/lib/either";
 import {fail} from "../utils";
-import {
-  CaseGetExceptionMacro,
-  CaseGetExceptions,
-  CaseSetExceptionMacro,
-  CaseSetExceptions,
-  isThis,
-  Key
-} from "./index";
+import {CaseGetExceptionMacro, CaseGetExceptions, CaseSetExceptionMacro, CaseSetExceptions, isThis, Key} from "./index";
 
 export type CaseAnnotatedExpressionLike = CaseAnnotatedExpression.Type | CaseExpressionLike;
 

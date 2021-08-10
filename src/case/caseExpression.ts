@@ -9,10 +9,15 @@ import {
   CaseGetExceptionMacro,
   CaseGetExceptionNoSuchKey,
   CaseGetExceptions,
-  CaseGetExceptionUnreachable, CaseSetExceptions, CaseSetExceptionUnreachable,
+  CaseGetExceptionUnreachable,
+  CaseSetExceptions,
+  CaseSetExceptionUnreachable,
   head,
   isThis,
-  Key, representKey, setOnNew, tail
+  Key,
+  representKey,
+  setOnNew,
+  tail
 } from "./index";
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseMacro} from "./caseMacro";
@@ -24,9 +29,9 @@ export type CaseExpressionLike = CaseExpression.Type | CaseLiteralLike;
 
 export namespace CaseExpression {
   export const guards = [
-    CaseStruct.is,
-    CaseLiteral.is,
-    CaseUnparsed.is,
+    () => CaseStruct.is,
+    () => CaseLiteral.is,
+    () => CaseUnparsed.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;

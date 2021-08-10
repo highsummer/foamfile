@@ -4,12 +4,14 @@ import {CaseAnnotatedExpression, CaseAnnotatedExpressionLike} from "./caseAnnota
 import {Either, left, right} from "fp-chainer/lib/either";
 import {fail} from "../utils";
 import {
-  arrayGet, arraySet,
+  arrayGet,
+  arraySet,
   CaseSetExceptionMacro,
   CaseSetExceptions,
   CaseSetExceptionUnreachable,
   head,
-  Key, setOnNew,
+  Key,
+  setOnNew,
   tail
 } from "./index";
 import {CaseExpression} from "./caseExpression";
