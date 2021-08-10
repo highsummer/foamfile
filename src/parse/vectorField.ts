@@ -1,4 +1,4 @@
-import {ParserExceptionCannotParse, Primitive, Spec, word} from "./index";
+import {ParserExceptionCannotParse, Primitive, Spec, token, word} from "./index";
 import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
@@ -59,6 +59,7 @@ export namespace VectorField {
       lang.ruleHeader,
       lang.ruleFieldArray,
     )
+      .skip(token(word("")))
       .map(([header, fieldArray]) => CaseVectorField.build("", "", "", fieldArray))
       .desc("ruleVectorField")
   }

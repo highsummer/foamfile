@@ -1,4 +1,4 @@
-import {ParserExceptionCannotParse, Primitive, Spec, word} from "./index";
+import {ParserExceptionCannotParse, Primitive, Spec, token, word} from "./index";
 import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
@@ -57,6 +57,7 @@ export namespace FaceList {
       lang.ruleHeader,
       lang.ruleDataArray,
     )
+      .skip(token(word("")))
       .map(([header, dataArray]) => CaseFaceList.build("", "", "", dataArray))
       .desc("ruleFaceList")
   }
