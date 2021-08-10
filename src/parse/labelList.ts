@@ -76,7 +76,7 @@ export namespace LabelList {
 
   const language = createLanguage(rules);
 
-  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseFaceList.Type> {
+  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseLabelList.Type> {
     try {
       return right(language.ruleFaceList.tryParse(input))
     } catch (e) {
