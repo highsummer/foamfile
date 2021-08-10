@@ -8,6 +8,7 @@ import {CaseLiteral} from "./caseLiteral";
 import {Dictionary} from "../parse/dictionary";
 import {VectorField} from "../parse/vectorField";
 import {FaceList} from "../parse/faceList";
+import {VolField} from "../parse/volField";
 
 describe("case", () => {
   const text1 = `a {
@@ -207,6 +208,12 @@ RAS {
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
   });
+
+  it("volField", () => {
+    const parsed = VolField.parse(volField);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+  });
 });
 
 const regexedKey = `solvers
@@ -274,4 +281,43 @@ const faceList = `FoamFile
 4(157 236 79 1)
 4(156 235 236 157)
 4(158 237 80 2)
-)`
+)`;
+
+const volField = `
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   nonuniform List<scalar> 
+3
+(
+70.7896
+9.90852
+-62.7748
+)
+;
+
+
+boundaryField
+{
+    inlet
+    {
+        type            freestreamPressure;
+        freestreamValue uniform 0;
+        supersonic      0;
+        value           nonuniform List<scalar> 
+3
+(
+1.2351
+0.666308
+0.0590405
+)
+;
+    }
+    walls
+    {
+        type            zeroGradient;
+    }
+    frontAndBack
+    {
+        type            empty;
+    }
+}`;

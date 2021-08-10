@@ -24,6 +24,8 @@ import {CaseMacro} from "./caseMacro";
 import {CaseDictionary} from "./caseDictionary";
 import {CaseArray} from "./caseArray";
 import {CaseDeclaration} from "./caseDeclaration";
+import {CaseScalarList} from "./caseScalarList";
+import {CaseVectorList} from "./caseVectorList";
 
 export type CaseExpressionLike = CaseExpression.Type | CaseLiteralLike;
 
@@ -32,13 +34,15 @@ export namespace CaseExpression {
     () => CaseStruct.is,
     () => CaseLiteral.is,
     () => CaseUnparsed.is,
+    () => CaseScalarList.is,
+    () => CaseVectorList.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;
   export const is = unionPredicate(...guards)<Type>();
 
   export function to(x: CaseExpressionLike): Type {
-    if (typeof x === "object" && "type" in x && (CaseStruct.is(x) || CaseUnparsed.is(x))) {
+    if (typeof x === "object" && "type" in x && (is(x) && !CaseLiteral.is(x))) {
       return x
     } else {
       return CaseLiteral.to(x)
@@ -96,6 +100,10 @@ export namespace CaseExpression {
       return CaseLiteral.print(x)
     } else if (CaseUnparsed.is(x)) {
       return `/* unparsed stubs */\n\n${x.data}\n\n`
+    } else if (CaseVectorList.is(x)) {
+      return CaseVectorList.print(x)
+    } else if (CaseScalarList.is(x)) {
+      return CaseScalarList.print(x)
     } else {
       assertNever(x);
     }
