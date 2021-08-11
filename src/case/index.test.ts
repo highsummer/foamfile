@@ -273,6 +273,7 @@ const faceList = `FoamFile
     format      ascii;
     class       faceList;
     object      faces;
+    note        "nPoints: 25012 nCells: 12225 nFaces: 49180 nInternalFaces: 24170";
 }
 
 4

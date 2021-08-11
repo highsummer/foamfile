@@ -2,22 +2,14 @@ import {ParserExceptionCannotParse, Primitive, Spec, token, word} from "./index"
 import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
-import {CaseFaceList} from "../case/caseFaceList";
 import {Either, left, right} from "fp-chainer/lib/either";
 import {Exception, fail} from "../utils";
 import {CaseLabelList} from "../case/caseLabelList";
 
 export namespace LabelList {
   function ruleHeaderEntry<Lang extends Language>(lang: Lang): Parser<CaseDeclaration.Type> {
-    return alt(
-      seq(word("version"), lang.ruleString, word(";")),
-      seq(word("format"), lang.ruleString, word(";")),
-      seq(word("class"), word("labelList"), word(";")),
-      seq(word("object"), lang.ruleString, word(";")),
-      seq(word("location"), lang.ruleString, word(";")),
-      seq(word("note"), lang.ruleString, word(";")),
-    )
-      .map(([key, value, terminator]) => CaseDeclaration.build(key, value))
+    return seq(lang.ruleString, alt(lang.ruleNumber, lang.ruleDoubleQuote, lang.ruleString), word(";"))
+      .map(([key, value]) => CaseDeclaration.build(key, value))
       .desc("ruleHeaderEntry")
   }
 
