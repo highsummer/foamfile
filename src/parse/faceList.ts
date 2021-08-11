@@ -14,6 +14,7 @@ export namespace FaceList {
       seq(word("class"), alt(word("faceList"), word("cellList")), word(";")),
       seq(word("object"), lang.ruleString, word(";")),
       seq(word("location"), lang.ruleString, word(";")),
+      seq(word("note"), lang.ruleString, word(";")),
     )
       .map(([key, value, terminator]) => CaseDeclaration.build(key, value))
       .desc("ruleHeaderEntry")

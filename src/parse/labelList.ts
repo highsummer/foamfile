@@ -15,6 +15,7 @@ export namespace LabelList {
       seq(word("class"), word("labelList"), word(";")),
       seq(word("object"), lang.ruleString, word(";")),
       seq(word("location"), lang.ruleString, word(";")),
+      seq(word("note"), lang.ruleString, word(";")),
     )
       .map(([key, value, terminator]) => CaseDeclaration.build(key, value))
       .desc("ruleHeaderEntry")
