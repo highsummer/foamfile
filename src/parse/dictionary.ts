@@ -176,7 +176,7 @@ export namespace Dictionary {
   }
 
   function ruleDeclaration(lang: Language): Parser<CaseDeclaration.Type> {
-    return seq(lang.ruleString, alt2(lang.ruleAnnotatedExpression, lang.ruleMacro))
+    return seq(lang.ruleString, alt2(lang.ruleMacro, lang.ruleAnnotatedExpression))
       .map(([key, value]) => ({
         type: CaseDeclaration.TypeSignature,
         key: key,
@@ -198,9 +198,9 @@ export namespace Dictionary {
   function ruleDictionary(lang: Language): Parser<CaseDictionary.Type> {
     return word("{")
       .then(alt3(
+        lang.ruleMacro,
         lang.ruleDeclaration,
         lang.ruleRegexDeclaration,
-        lang.ruleMacro,
       ).many())
       .skip(word("}"))
       .map(entries => ({

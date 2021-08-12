@@ -6,7 +6,7 @@ import {
   CaseMacroQualifiedName,
   CaseMacroRootSearch
 } from "../case/caseMacro";
-import {alt2, alt3, alt4, Primitive, Spec, token} from "./index";
+import {alt2, alt3, alt4, option, Primitive, Spec, token, word} from "./index";
 
 export namespace Macro {
   function ruleMacroInner<Lang extends Language>(lang: Lang): Parser<CaseMacro.Type> {
@@ -63,7 +63,7 @@ export namespace Macro {
   }
 
   function ruleIdentifier<Lang extends Language>(lang: Lang): Parser<CaseMacroIdentifier.Type> {
-    return regexp(/[a-zA-Z0-9_.:]+/)
+    return regexp(/[a-zA-Z0-9_]+/)
       .map(name => ({
         type: CaseMacroIdentifier.TypeSignature,
         name: name,
@@ -88,14 +88,18 @@ export namespace Macro {
     return alt2(
       seq(
         string("$"),
+        option(string("{")),
         alt4(
           lang.ruleRootSearch,
           lang.ruleParentSearch,
           lang.ruleQualifiedName,
           lang.ruleIdentifier,
         ),
+        option(string("}")),
+        option(word(";")),
       )
-        .map(([_, macro]) => macro),
+        .map(([_, open, macro, close, semicolon]) => macro)
+        .thru(token),
       lang.rulePreprocessor
     )
       .desc("macro")

@@ -26,6 +26,8 @@ import {CaseArray} from "./caseArray";
 import {CaseDeclaration} from "./caseDeclaration";
 import {CaseScalarList} from "./caseScalarList";
 import {CaseVectorList} from "./caseVectorList";
+import {CaseLabelList} from "./caseLabelList";
+import {CaseFaceList} from "./caseFaceList";
 
 export type CaseExpressionLike = CaseExpression.Type | CaseLiteralLike;
 
@@ -36,6 +38,8 @@ export namespace CaseExpression {
     () => CaseUnparsed.is,
     () => CaseScalarList.is,
     () => CaseVectorList.is,
+    () => CaseLabelList.is,
+    () => CaseFaceList.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;
@@ -105,7 +109,7 @@ export namespace CaseExpression {
     } else if (CaseScalarList.is(x)) {
       return CaseScalarList.print(x)
     } else {
-      assertNever(x);
+      return "not implemented"
     }
   }
 }

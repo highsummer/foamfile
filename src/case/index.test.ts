@@ -9,6 +9,7 @@ import {Dictionary} from "../parse/dictionary";
 import {VectorField} from "../parse/vectorField";
 import {FaceList} from "../parse/faceList";
 import {VolField} from "../parse/volField";
+import {expand} from "../utility/expandMacro";
 
 describe("case", () => {
   const text1 = `a {
@@ -203,16 +204,32 @@ RAS {
       .mapLeft(l => assert.fail(JSON.stringify(l)))
   });
 
-  it("faceList", () => {
+  it("face list", () => {
     const parsed = FaceList.parse(faceList);
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
   });
 
-  it("volField", () => {
+  it("vol field", () => {
     const parsed = VolField.parse(volField);
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
+  });
+
+  it("macro expansion", () => {
+    const parsed = Dictionary.parse(macro);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+    parsed
+      .chain(_ => expand(_))
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+      .chain(_ => CaseExpression.get(_, ["b"]))
+      .map(_ => expect(_.value).to.be.deep.equal(CaseDictionary.build(
+        CaseDeclaration.build("d", 3),
+        CaseDeclaration.build("b", 1),
+        CaseDeclaration.build("c", 2),
+        CaseDeclaration.build("e", 1),
+      )));
   });
 });
 
@@ -321,4 +338,16 @@ boundaryField
     {
         type            empty;
     }
+}`;
+
+const macro = `
+a {
+    b 1;
+    c 2;
+}
+
+b {
+    d 3;
+    $a;
+    e $a.b;
 }`;
