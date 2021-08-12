@@ -9,7 +9,8 @@ import {Dictionary} from "../parse/dictionary";
 import {VectorField} from "../parse/vectorField";
 import {FaceList} from "../parse/faceList";
 import {VolField} from "../parse/volField";
-import {expand} from "../utility/expandMacro";
+import {expand as expandMacro} from "../utility/expandMacro";
+import {expand as expandRegex} from "../utility/expandRegex";
 
 describe("case", () => {
   const text1 = `a {
@@ -179,10 +180,15 @@ RAS {
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)))
       .map(r => {
-        CaseExpression.get(r, ["rho", "solver"])
-          .map(e => expect(e).to.be.deep.equal(CaseLiteral.to("diagonal")));
-        CaseExpression.get(r, ["rhoWhatever", "solver"])
-          .map(e => expect(e).to.be.deep.equal(CaseLiteral.to("diagonal")));
+        CaseExpression.get(r, ["solvers", "rho", "solver"])
+          .map(e => expect(e).to.be.deep.equal(CaseAnnotatedExpression.build("diagonal")))
+          .mapLeft(l => assert.fail(JSON.stringify(l)));
+        CaseExpression.get(r, ["solvers", "rhoWhatever", "solver"])
+          .map(e => expect(e).to.be.deep.equal(CaseAnnotatedExpression.build("diagonal")))
+          .mapLeft(l => assert.fail(JSON.stringify(l)));
+        CaseExpression.get(r, ["solvers", "U", "solver"])
+          .map(e => expect(e).to.be.deep.equal(CaseAnnotatedExpression.build("PBiCGStab")))
+          .mapLeft(l => assert.fail(JSON.stringify(l)));
       });
   });
 
@@ -221,7 +227,7 @@ RAS {
     parsed
       .mapLeft(l => assert.fail(JSON.stringify(l)));
     parsed
-      .chain(_ => expand(_))
+      .chain(_ => expandMacro(_))
       .mapLeft(l => assert.fail(JSON.stringify(l)))
       .chain(_ => CaseExpression.get(_, ["b"]))
       .map(_ => expect(_.value).to.be.deep.equal(CaseDictionary.build(
@@ -231,6 +237,17 @@ RAS {
         CaseDeclaration.build("e", 1),
       )));
   });
+
+  it("regex expansion", () => {
+    const parsed = Dictionary.parse(regexKeySimple);
+    parsed
+      .mapLeft(l => assert.fail(JSON.stringify(l)));
+    parsed
+      .chain(_ => expandRegex(_))
+      .mapLeft(l => assert.fail(JSON.stringify(l)))
+      .map(_ => expect(_.fields.length).to.be.equal(4));
+  });
+
 });
 
 const regexedKey = `solvers
@@ -249,6 +266,14 @@ const regexedKey = `solvers
     }
 }
 `;
+
+const regexKeySimple = `
+"(U|e|k|epsilon)" {
+    solver          PBiCGStab;
+    preconditioner  DILU;
+    tolerance       1e-5;
+    relTol          0.1;
+}`;
 
 const nonUniform = `
 internalField   nonuniform List<vector> 

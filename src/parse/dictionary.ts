@@ -125,8 +125,8 @@ export namespace Dictionary {
         .map(anno => [anno.annotations, anno.value] as const)
         .desc("annotatedUnparsed"),
       alt2(
-        lang.ruleLiteral,
         lang.ruleMacro,
+        lang.ruleLiteral,
       )
         .many()
         .skip(word(";"))
@@ -134,8 +134,8 @@ export namespace Dictionary {
         .desc("annotatedLiteral"),
       seq(
         alt2(
-          lang.ruleLiteral,
           lang.ruleMacro,
+          lang.ruleLiteral,
         )
           .many(),
         lang.ruleDictionary,
@@ -143,8 +143,8 @@ export namespace Dictionary {
         .desc("annotatedDictionary"),
       seq(
         alt2(
-          lang.ruleLiteral,
           lang.ruleMacro,
+          lang.ruleLiteral,
         ).many(),
         lang.ruleArray,
         option(word(";")),
@@ -164,8 +164,8 @@ export namespace Dictionary {
     return option(lang.ruleNumber)
       .then(word("("))
       .then(alt2(
-        lang.ruleExpression,
         lang.ruleMacro,
+        lang.ruleExpression,
       ).many())
       .skip(word(")"))
       .map(fields => ({
@@ -186,7 +186,7 @@ export namespace Dictionary {
   }
 
   function ruleRegexDeclaration(lang: Language): Parser<CaseRegexDeclaration.Type> {
-    return seq(lang.ruleDoubleQuote, alt2(lang.ruleAnnotatedExpression, lang.ruleMacro))
+    return seq(lang.ruleDoubleQuote, alt2(lang.ruleMacro, lang.ruleAnnotatedExpression))
       .map(([key, value]) => ({
         type: CaseRegexDeclaration.TypeSignature,
         pattern: key,
@@ -199,8 +199,8 @@ export namespace Dictionary {
     return word("{")
       .then(alt3(
         lang.ruleMacro,
-        lang.ruleDeclaration,
         lang.ruleRegexDeclaration,
+        lang.ruleDeclaration,
       ).many())
       .skip(word("}"))
       .map(entries => ({
@@ -211,7 +211,7 @@ export namespace Dictionary {
   }
 
   function ruleFoamDictionary(lang: Language): Parser<CaseDictionary.Type> {
-    return lang.ruleDeclaration.many()
+    return alt2(lang.ruleRegexDeclaration, lang.ruleDeclaration).many()
       .map(entries => ({
         type: CaseDictionary.TypeSignature,
         fields: entries,
