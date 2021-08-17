@@ -67,11 +67,13 @@ function expandCaseDeclaration(x: CaseDeclaration.Type | CaseRegexDeclaration.Ty
         value: value,
       }])
   } else {
-    if (/^\(?([\w\d_]+\|)+[\w\d_]+\)?$/.exec(x.pattern) !== null) {
-      const keys = /^\(?([\w\d_|]+)\)?$/.exec(x.pattern)![1].split("|");
-      return right(keys.map(key => ({
+    const match = /^([\w\d_]*)(\(([\w\d_]+\|)+[\w\d_]+\))?([\w\d_]*)$/.exec(x.pattern)
+    if (match !== null) {
+      const [all, prefix, pattern, partial, suffix] = match;
+      const elements = pattern.split("|");
+      return right(elements.map(key => ({
         type: CaseDeclaration.TypeSignature,
-        key: key,
+        key: `${prefix}${key}${suffix}`,
         value: x.value,
       })))
     } else {
