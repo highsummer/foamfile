@@ -70,7 +70,7 @@ function expandCaseDeclaration(x: CaseDeclaration.Type | CaseRegexDeclaration.Ty
     const match = /^([\w\d_]*)(\(([\w\d_]+\|)+[\w\d_]+\))?([\w\d_]*)$/.exec(x.pattern)
     if (match !== null) {
       const [all, prefix, pattern, partial, suffix] = match;
-      const elements = pattern.split("|");
+      const elements = pattern.slice(1, -1).split("|");
       return right(elements.map(key => ({
         type: CaseDeclaration.TypeSignature,
         key: `${prefix}${key}${suffix}`,
