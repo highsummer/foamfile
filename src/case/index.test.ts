@@ -329,15 +329,7 @@ const faceList = `FoamFile
 const volField = `
 dimensions      [0 2 -2 0 0 0 0];
 
-internalField   nonuniform List<scalar> 
-3
-(
-70.7896
-9.90852
--62.7748
-)
-;
-
+internalField   uniform 70.7896;
 
 boundaryField
 {

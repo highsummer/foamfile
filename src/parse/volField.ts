@@ -81,8 +81,20 @@ export namespace VolField {
       .desc("expression")
   }
 
-  function ruleDataList(lang: Language): Parser<CaseVectorList.Type | CaseScalarList.Type> {
-    return alt2(
+  function ruleDataList(lang: Language): Parser<CaseAnnotatedExpression.Type> {
+    return alt4(
+      seq(
+        word("uniform"),
+        lang.ruleVector,
+        option(word(";")).map(o => o ?? ""),
+      )
+        .map(([uniform, vector]) => CaseAnnotatedExpression.build(vector, uniform)),
+      seq(
+        word("uniform"),
+        lang.ruleNumber,
+        option(word(";")).map(o => o ?? ""),
+      )
+        .map(([uniform, scalar]) => CaseAnnotatedExpression.build(scalar, uniform)),
       seq(
         word("nonuniform"),
         word("List<vector>"),
@@ -92,7 +104,7 @@ export namespace VolField {
         word(")"),
         option(word(";")).map(o => o ?? ""),
       )
-        .map(([nonuniform, list, length, open, data, close, semicolon]) => CaseVectorList.build(data)),
+        .map(([nonuniform, list, length, open, data, close, semicolon]) => CaseAnnotatedExpression.build(CaseVectorList.build(data))),
       seq(
         word("nonuniform"),
         word("List<scalar>"),
@@ -102,7 +114,7 @@ export namespace VolField {
         word(")"),
         option(word(";")).map(o => o ?? ""),
       )
-        .map(([nonuniform, list, length, open, data, close, semicolon]) => CaseScalarList.build(data)),
+        .map(([nonuniform, list, length, open, data, close, semicolon]) => CaseAnnotatedExpression.build(CaseScalarList.build(data))),
     )
       .desc("ruleDataList")
   }
@@ -110,7 +122,7 @@ export namespace VolField {
   function ruleAnnotatedExpression(lang: Language): Parser<CaseAnnotatedExpression.Type> {
     return alt4(
       lang.ruleDataList
-        .map(dataList => [[] as never[], dataList] as const)
+        .map(dataList => [dataList.annotations, dataList.value] as const)
         .desc("annotatedDataList"),
       alt2(
         lang.ruleLiteral,
