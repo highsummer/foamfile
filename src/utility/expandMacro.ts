@@ -16,6 +16,7 @@ import {
 } from "../case/caseMacro";
 import {CaseExpression} from "../case/caseExpression";
 import {CaseGetExceptionNoSuchKey} from "../case";
+import {CaseVectorField} from "../case/caseVectorField";
 
 export const ExceptionExpandMacroNoEntry = "core.case.expandMacro.NoEntry" as const;
 export const ExceptionExpandMacroInvalidTarget = "core.case.expandMacro.InvalidTarget" as const;
@@ -160,6 +161,8 @@ export function expand<Node extends CaseNode.Type>(x: Node): Either<Exceptions, 
     return expandCaseDeclaration([], x) as Either<Exceptions, Node>
   } else if (CaseMacro.is(x)) {
     return expandCaseMacro([], x) as Either<Exceptions, Node>
+  } else if (CaseVectorField.is(x)) {
+    return right(x)
   } else {
     assertNever(x);
   }

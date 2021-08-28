@@ -4,6 +4,7 @@ import {CaseExpression} from "./caseExpression";
 import {CaseDeclaration} from "./caseDeclaration";
 import {CaseRegexDeclaration} from "./caseRegexDeclaration";
 import {CaseMacro} from "./caseMacro";
+import {CaseVectorField} from "./caseVectorField";
 
 export namespace CaseNode {
   export const guards = [
@@ -12,6 +13,7 @@ export namespace CaseNode {
     () => CaseDeclaration.is,
     () => CaseRegexDeclaration.is,
     () => CaseMacro.is,
+    () => CaseVectorField.is,
   ] as const;
   export type Enum = FromGuard<typeof guards>;
   export type Type = Sum<Enum>;
