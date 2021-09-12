@@ -1,7 +1,7 @@
 import {CaseNode} from "../case/caseNode";
 import {CaseAnnotatedExpression} from "../case/caseAnnotatedExpression";
-import {all, Either, left, right} from "fp-chainer/lib/either";
-import {assertNever, bundle2, Exception, fail} from "../utils";
+import {all, Either, left, right} from "fp-chainer/either";
+import {assertNever, bundle2} from "../utils";
 import {CaseDictionary} from "../case/caseDictionary";
 import {CaseArray} from "../case/caseArray";
 import {CaseDeclaration} from "../case/caseDeclaration";
@@ -17,15 +17,16 @@ import {
 import {CaseExpression} from "../case/caseExpression";
 import {CaseGetExceptionNoSuchKey} from "../case";
 import {CaseVectorField} from "../case/caseVectorField";
+import {fail, Failure} from "fp-chainer/failure";
 
 export const ExceptionExpandMacroNoEntry = "core.case.expandMacro.NoEntry" as const;
 export const ExceptionExpandMacroInvalidTarget = "core.case.expandMacro.InvalidTarget" as const;
 export const ExceptionExpandMacroNotImplemented = "core.case.expandMacro.NotImplemented" as const;
 
 export type Exceptions =
-  | Exception<typeof ExceptionExpandMacroNoEntry>
-  | Exception<typeof ExceptionExpandMacroInvalidTarget>
-  | Exception<typeof ExceptionExpandMacroNotImplemented>;
+  | Failure<typeof ExceptionExpandMacroNoEntry, unknown>
+  | Failure<typeof ExceptionExpandMacroInvalidTarget, unknown>
+  | Failure<typeof ExceptionExpandMacroNotImplemented, unknown>;
 
 function expandCaseAnnotatedExpression(stack: CaseAnnotatedExpression.Type[], x: CaseAnnotatedExpression.Type): Either<Exceptions, CaseAnnotatedExpression.Type> {
   return bundle2(

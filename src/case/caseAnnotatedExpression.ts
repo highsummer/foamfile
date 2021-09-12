@@ -2,9 +2,9 @@ import {predicate} from "./helpers";
 import {CaseExpression, CaseExpressionLike} from "./caseExpression";
 import {CaseLiteral, CaseLiteralLike} from "./caseLiteral";
 import {CaseMacro} from "./caseMacro";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {fail} from "../utils";
+import {Either, left, right} from "fp-chainer/either";
 import {CaseGetExceptionMacro, CaseGetExceptions, CaseSetExceptionMacro, CaseSetExceptions, isThis, Key} from "./index";
+import {fail} from "fp-chainer/failure";
 
 export type CaseAnnotatedExpressionLike = CaseAnnotatedExpression.Type | CaseExpressionLike;
 

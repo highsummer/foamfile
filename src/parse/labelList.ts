@@ -2,7 +2,7 @@ import {ParserExceptionCannotParse, Primitive, Spec, token, word} from "./index"
 import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
-import {Either, left, right} from "fp-chainer/lib/either";
+import {Either, left, right} from "fp-chainer/either";
 import {Exception, fail} from "../utils";
 import {CaseLabelList} from "../case/caseLabelList";
 

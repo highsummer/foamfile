@@ -1,6 +1,5 @@
 import {alt, createLanguage, Parser, regexp, seq, TypedLanguage} from "parsimmon";
-import {Exception, fail} from "../utils";
-import {Either, left, right} from "fp-chainer/lib/either";
+import {Either, left, right} from "fp-chainer/either";
 import {
   CaseBooleanLiteral,
   CaseDimensionLiteral,
@@ -18,6 +17,7 @@ import {CaseRegexDeclaration} from "../case/caseRegexDeclaration";
 import {CaseDictionary} from "../case/caseDictionary";
 import {alt2, alt3, alt4, option, ParserExceptionCannotParse, Spec, token, word} from "./index";
 import {Macro} from "./macro";
+import {fail, Failure} from "fp-chainer/failure";
 
 export namespace Dictionary {
   function ruleBooleanLiteral(lang: Language): Parser<CaseBooleanLiteral.Type> {
@@ -265,7 +265,7 @@ export namespace Dictionary {
 
   const foamLang = createLanguage(rules);
 
-  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseDictionary.Type> {
+  export function parse(input: string): Either<Failure<typeof ParserExceptionCannotParse, unknown>, CaseDictionary.Type> {
     try {
       return right(foamLang.ruleFoam.tryParse(input))
     } catch (e) {

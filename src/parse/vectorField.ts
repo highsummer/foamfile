@@ -4,8 +4,8 @@ import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
 import {Vector} from "../case/helpers";
 import {CaseVectorField} from "../case/caseVectorField";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {Exception, fail} from "../utils";
+import {Either, left, right} from "fp-chainer/either";
+import {fail, Failure} from "fp-chainer/failure";
 
 export namespace VectorField {
   function ruleHeaderEntry<Lang extends Language>(lang: Lang): Parser<CaseDeclaration.Type> {
@@ -69,7 +69,7 @@ export namespace VectorField {
 
   const language = createLanguage(rules);
 
-  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseVectorField.Type> {
+  export function parse(input: string): Either<Failure<typeof ParserExceptionCannotParse, unknown>, CaseVectorField.Type> {
     try {
       return right(language.ruleVectorField.tryParse(input))
     } catch (e) {

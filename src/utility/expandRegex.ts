@@ -1,6 +1,6 @@
-import {assertNever, bundle2, Exception, fail} from "../utils";
+import {assertNever, bundle2} from "../utils";
 import {CaseAnnotatedExpression} from "../case/caseAnnotatedExpression";
-import {all, Either, left, right} from "fp-chainer/lib/either";
+import {all, Either, left, right} from "fp-chainer/either";
 import {CaseExpression} from "../case/caseExpression";
 import {CaseLiteral} from "../case/caseLiteral";
 import {CaseDeclaration} from "../case/caseDeclaration";
@@ -9,13 +9,14 @@ import {CaseMacro} from "../case/caseMacro";
 import {CaseDictionary} from "../case/caseDictionary";
 import {CaseArray} from "../case/caseArray";
 import {CaseNode} from "../case/caseNode";
+import {fail, Failure} from "fp-chainer/failure";
 
 export const ExceptionExpandRegexTooComplex = "core.case.expandMacro.TooComplex" as const;
 export const ExceptionExpandRegexBadInput = "core.case.expandMacro.BadInput" as const;
 
 export type Exceptions =
-  | Exception<typeof ExceptionExpandRegexTooComplex>
-  | Exception<typeof ExceptionExpandRegexBadInput>;
+  | Failure<typeof ExceptionExpandRegexTooComplex, unknown>
+  | Failure<typeof ExceptionExpandRegexBadInput, unknown>;
 
 
 function expandCaseAnnotatedExpression(x: CaseAnnotatedExpression.Type | CaseMacro.Type): Either<Exceptions, CaseAnnotatedExpression.Type | CaseMacro.Type> {

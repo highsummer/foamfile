@@ -1,8 +1,7 @@
 import {predicate} from "./helpers";
 import {CaseMacro} from "./caseMacro";
 import {CaseAnnotatedExpression, CaseAnnotatedExpressionLike} from "./caseAnnotatedExpression";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {fail} from "../utils";
+import {Either, left, right} from "fp-chainer/either";
 import {
   arrayGet,
   arraySet,
@@ -16,6 +15,7 @@ import {
 } from "./index";
 import {CaseExpression} from "./caseExpression";
 import {CaseLiteral} from "./caseLiteral";
+import {fail} from "fp-chainer/failure";
 
 export namespace CaseArray {
   export const TypeSignature = "case.array" as const;

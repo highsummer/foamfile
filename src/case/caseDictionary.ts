@@ -2,8 +2,7 @@ import {predicate} from "./helpers";
 import {CaseDeclaration} from "./caseDeclaration";
 import {CaseRegexDeclaration} from "./caseRegexDeclaration";
 import {CaseMacro} from "./caseMacro";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {fail} from "../utils";
+import {Either, left, right} from "fp-chainer/either";
 import {
   CaseSetExceptionMacro,
   CaseSetExceptions,
@@ -20,6 +19,7 @@ import {
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseExpression} from "./caseExpression";
 import {CaseLiteral, CaseStringLiteral} from "./caseLiteral";
+import {fail} from "fp-chainer/failure";
 
 export namespace CaseDictionary {
   export const TypeSignature = "case.dictionary" as const;

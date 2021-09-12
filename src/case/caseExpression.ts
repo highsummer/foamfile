@@ -2,9 +2,8 @@ import {FromGuard, Sum, unionPredicate} from "./helpers";
 import {CaseStruct} from "./caseStruct";
 import {CaseLiteral, CaseLiteralLike} from "./caseLiteral";
 import {CaseUnparsed} from "./caseUnparsed";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {assertNever, fail} from "../utils";
-import {fromNullable} from "fp-chainer/lib/option";
+import {Either, left, right} from "fp-chainer/either";
+import {fromNullable} from "fp-chainer/option";
 import {
   CaseGetExceptionMacro,
   CaseGetExceptionNoSuchKey,
@@ -28,6 +27,7 @@ import {CaseScalarList} from "./caseScalarList";
 import {CaseVectorList} from "./caseVectorList";
 import {CaseLabelList} from "./caseLabelList";
 import {CaseFaceList} from "./caseFaceList";
+import {fail} from "fp-chainer/failure";
 
 export type CaseExpressionLike = CaseExpression.Type | CaseLiteralLike;
 

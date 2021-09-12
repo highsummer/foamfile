@@ -3,9 +3,9 @@ import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
 import {CaseFaceList} from "../case/caseFaceList";
-import {Either, left, right} from "fp-chainer/lib/either";
-import {Exception, fail} from "../utils";
+import {Either, left, right} from "fp-chainer/either";
 import {CaseDictionary} from "../case/caseDictionary";
+import {fail, Failure} from "fp-chainer/failure";
 
 export namespace FaceList {
   function ruleHeaderEntry<Lang extends Language>(lang: Lang): Parser<CaseDeclaration.Type> {
@@ -70,7 +70,7 @@ export namespace FaceList {
 
   const language = createLanguage(rules);
 
-  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseFaceList.Type> {
+  export function parse(input: string): Either<Failure<typeof ParserExceptionCannotParse, unknown>, CaseFaceList.Type> {
     try {
       return right(language.ruleFaceList.tryParse(input))
     } catch (e) {

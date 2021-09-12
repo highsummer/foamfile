@@ -1,9 +1,9 @@
-import {Exception, fail} from "../utils";
-import {Either, left, right} from "fp-chainer/lib/either";
+import {Either, left, right} from "fp-chainer/either";
 import {CaseDictionary} from "./caseDictionary";
 import {CaseArray} from "./caseArray";
 import {CaseAnnotatedExpression} from "./caseAnnotatedExpression";
 import {CaseExpression} from "./caseExpression";
+import {fail, Failure} from "fp-chainer/failure";
 
 export type Dimension = [number, number, number, number, number, number, number];
 
@@ -35,17 +35,17 @@ export const CaseGetExceptionMacro = "core.case.get.Macro" as const;
 export const CaseGetExceptionUnreachable = "core.case.get.Unreachable" as const;
 
 export type CaseGetExceptions =
-  | Exception<typeof CaseGetExceptionNoSuchFile>
-  | Exception<typeof CaseGetExceptionNoSuchKey>
-  | Exception<typeof CaseGetExceptionMacro>
-  | Exception<typeof CaseGetExceptionUnreachable>;
+  | Failure<typeof CaseGetExceptionNoSuchFile, unknown>
+  | Failure<typeof CaseGetExceptionNoSuchKey, unknown>
+  | Failure<typeof CaseGetExceptionMacro, unknown>
+  | Failure<typeof CaseGetExceptionUnreachable, unknown>;
 
 export const CaseSetExceptionMacro = "core.case.set.Macro" as const;
 export const CaseSetExceptionUnreachable = "core.case.set.Unreachable" as const;
 
 export type CaseSetExceptions =
-  | Exception<typeof CaseSetExceptionMacro>
-  | Exception<typeof CaseSetExceptionUnreachable>;
+  | Failure<typeof CaseSetExceptionMacro, unknown>
+  | Failure<typeof CaseSetExceptionUnreachable, unknown>;
 
 export function upsert<A>(as: A[], finder: (a: A) => boolean, factory: (a: A | undefined) => A): A[] {
   const index = as.findIndex(finder);
@@ -59,7 +59,7 @@ export function upsert<A>(as: A[], finder: (a: A) => boolean, factory: (a: A | u
 export const ArrayExceptionOutOfIndex = "core.case.set.OutOfIndex" as const;
 
 export type ArrayExceptions =
-  | Exception<typeof ArrayExceptionOutOfIndex>;
+  | Failure<typeof ArrayExceptionOutOfIndex, unknown>;
 
 export function arrayGet<T>(xs: T[], i: number): Either<ArrayExceptions, T> {
   if (i < 0) {
