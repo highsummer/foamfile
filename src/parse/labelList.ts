@@ -3,8 +3,8 @@ import {alt, createLanguage, Parser, seq, TypedLanguage} from "parsimmon";
 import {CaseDeclaration} from "../case/caseDeclaration";
 import {KeyFoamFile} from "../case";
 import {Either, left, right} from "fp-chainer/either";
-import {Exception, fail} from "../utils";
 import {CaseLabelList} from "../case/caseLabelList";
+import {fail, Failure} from "fp-chainer/failure";
 
 export namespace LabelList {
   function ruleHeaderEntry<Lang extends Language>(lang: Lang): Parser<CaseDeclaration.Type> {
@@ -57,7 +57,7 @@ export namespace LabelList {
 
   const language = createLanguage(rules);
 
-  export function parse(input: string): Either<Exception<typeof ParserExceptionCannotParse>, CaseLabelList.Type> {
+  export function parse(input: string): Either<Failure<typeof ParserExceptionCannotParse, unknown>, CaseLabelList.Type> {
     try {
       return right(language.ruleLabelList.tryParse(input))
     } catch (e) {
