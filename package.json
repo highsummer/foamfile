@@ -1,6 +1,6 @@
 {
   "name": "foamfile",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "",
   "main": "lib",
   "types": "lib",
@@ -13,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "chai": "^4.3.4",
-    "fp-chainer": "^0.3.0",
+    "fp-chainer": "^0.3.1",
     "mocha": "^9.0.2",
     "parsimmon": "^1.18.0",
     "typescript": "^4.3.4"
